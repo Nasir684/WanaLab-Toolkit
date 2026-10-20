@@ -9,6 +9,8 @@ jobs:
         with: { distribution: 'temurin', java-version: '17' }
       - uses: subosito/flutter-action@v2
         with: { flutter-version: '3.22.0', channel: 'stable' }
+      - name: Create android project
+        run: flutter create --project-name wanalab_toolkit --platforms=android --overwrite .
       - run: flutter pub get
       - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
