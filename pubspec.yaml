@@ -1,7 +1,6 @@
 name: wanalab_toolkit
-description: WanaLab Toolkit - VarRho Engine v1.0 - VAR + Rho Calculators - IEEE ASTM Research - Educational Tool
+description: WanaLab Toolkit - Powered by VarRho Engine - Research Based - Accurate - Private - No Ads Ever
 publish_to: 'none'
-
 version: 2.1.0+16
 
 environment:
