@@ -1,13 +1,26 @@
 name: wanalab_toolkit
-description: WanaLab Toolkit - 12-in-1 Var-Rho Engine for EMF, Ghost, Baby Pollution & More.
+description: WanaLab Toolkit - VarRho Engine v1.0 - VAR + Rho Calculators - IEEE ASTM Research - Educational Tool
 publish_to: 'none'
-version: 1.0.0+1
+
+version: 2.1.0+16
+
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
+
 dependencies:
   flutter:
     sdk: flutter
-  sensors_plus: ^4.0.2
-  cupertino_icons: ^1.0.2
+  cupertino_icons: ^1.0.6
+  url_launcher: ^6.2.5
+  shared_preferences: ^2.2.2
+  flutter_math_fork: ^0.7.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
