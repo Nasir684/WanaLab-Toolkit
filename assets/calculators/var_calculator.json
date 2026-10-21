@@ -1,0 +1,22 @@
+{
+  "id": "var_calculator",
+  "name": "VAR Calculator - Reactive Power - VarRho Engine",
+  "category": "Electrical",
+  "engine": "VarRho Engine v1.0 - Research Based",
+  "github": "https://github.com/Nasir684/WanaLab-Toolkit/tree/main/varrho-engine",
+  "disclaimer": "For electrical workshop estimation only - Not for final utility billing - Verify with licensed electrician - VarRho Engine IEEE formula - Research at GitHub",
+  "formula": "PF = kW/kVA, kVA = kW/PF, theta = acos(PF), kVAR = kW * tan(theta), VAR = V*I*sin(theta)",
+  "standard": "IEEE Std 1459-2010 - Reactive Power",
+  "inputs": [
+    {"label": "Real Power kW", "key": "kw", "unit": "kW"},
+    {"label": "Power Factor PF", "key": "pf", "unit": "0-1", "default": 0.8}
+  ],
+  "outputs": [
+    {"label": "Apparent Power kVA", "formula": "kW / PF"},
+    {"label": "Reactive Power kVAR", "formula": "kW * tan(acos(PF))"},
+    {"label": "Phase Angle θ", "formula": "acos(PF) * 180/pi", "unit": "degrees"}
+  ],
+  "example": "kW=10, PF=0.8 => kVA=12.5, kVAR=7.5, theta=36.87° - PASS - VarRho Engine",
+  "validation": "See /varrho-engine/VALIDATION.md - GitHub",
+  "author": "Nasir Khan - WanaLab Toolkit - VarRho Engine"
+}
