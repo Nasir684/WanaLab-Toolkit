@@ -1,0 +1,97 @@
+name: WanaLab Toolkit - VarRho Build v2.1.0+16
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.2'
+          channel: 'stable'
+
+      - name: Check clean repo
+        run: |
+          ls -la
+          cat pubspec.yaml
+          ls -la lib/
+
+      - name: Recreate Fresh Android v2 Project (Remove EMI v1)
+        run: |
+          # This creates a 100% clean v2 Android folder
+          flutter create --platforms=android --org com.wanalab --project-name wanalab_toolkit .
+          # Restore our lib/main.dart (flutter create overwrites it)
+          git checkout -- lib/main.dart || echo "keep current main.dart"
+
+      - name: Inject VarRho BuildConfig
+        run: |
+          cat > android/app/build.gradle << 'GRADLE'
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+
+          android {
+              namespace "com.wanalab.toolkit"
+              compileSdk 34
+              ndkVersion flutter.ndkVersion
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_1_8
+                  targetCompatibility JavaVersion.VERSION_1_8
+              }
+
+              kotlinOptions {
+                  jvmTarget = '1.8'
+              }
+
+              sourceSets {
+                  main.java.srcDirs += 'src/main/kotlin'
+              }
+
+              defaultConfig {
+                  applicationId "com.wanalab.toolkit"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 16
+                  versionName "2.1.0-VarRho"
+                  buildConfigField "String", "VAR_RHO_ENGINE", "\"v1.0-Research-IEEE-ASTM\""
+                  buildConfigField "String", "GITHUB_URL", "\"https://github.com/Nasir684/WanaLab-Toolkit\""
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+
+          flutter {
+              source '../..'
+          }
+          GRADLE
+          cat android/app/build.gradle
+
+      - name: Get deps
+        run: flutter pub get
+
+      - name: Build APK - v2 Embedding
+        run: flutter build apk --debug --build-name=2.1.0-VarRho --build-number=16
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WanaLab-Toolkit-v2.1.0-VarRho
+          path: build/app/outputs/flutter-apk/app-debug.apk
