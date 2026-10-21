@@ -1,0 +1,32 @@
+{
+  "id": "rho_calculator",
+  "name": "Rho Calculator - Resistivity & Density - VarRho Engine",
+  "category": "Electrical + Civil",
+  "engine": "VarRho Engine v1.0 - Research Based",
+  "github": "https://github.com/Nasir684/WanaLab-Toolkit/tree/main/varrho-engine",
+  "disclaimer": "For workshop estimation only - Soil Wenner ASTM G57 - Field conditions vary - Verify with lab test - Wellness only not medical for density - VarRho Engine",
+  "formulas": {
+    "material": "Rho = R * A / L - Material resistivity",
+    "soil_wenner": "Rho = 2 * pi * a * R - Soil resistivity Wenner Method ASTM G57-20",
+    "density": "Rho = m / V - Density kg/m3"
+  },
+  "standards": ["ASTM G57-20 Wenner", "Physics Material Science", "IS 1786 Steel"],
+  "inputs": [
+    {"method": "soil_wenner", "label": "Electrode spacing a", "key": "a", "unit": "m"},
+    {"method": "soil_wenner", "label": "Measured Resistance R", "key": "R", "unit": "Ω"},
+    {"method": "material", "label": "Resistance R", "key": "R2", "unit": "Ω"},
+    {"method": "material", "label": "Area A", "key": "A", "unit": "m2"},
+    {"method": "material", "label": "Length L", "key": "L", "unit": "m"}
+  ],
+  "outputs": [
+    {"label": "Soil Rho", "formula": "2 * pi * a * R", "unit": "Ω.m"},
+    {"label": "Material Rho", "formula": "R * A / L", "unit": "Ω.m"},
+    {"label": "Density Rho", "formula": "m / V", "unit": "kg/m3"}
+  ],
+  "examples": [
+    "Wenner a=1m R=10Ω => Rho=62.83 Ω.m - PASS",
+    "Material R=0.1Ω A=0.000113m2 L=1m => Rho=1.13e-5 Ω.m - PASS"
+  ],
+  "validation": "See /varrho-engine/VALIDATION.md - GitHub - 100% PASS",
+  "author": "Nasir Khan - WanaLab Toolkit - VarRho Engine"
+}
