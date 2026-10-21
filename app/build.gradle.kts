@@ -1,0 +1,9 @@
+    defaultConfig {
+        applicationId "com.wanalab.toolkit"
+        minSdk 21
+        targetSdk 34
+        versionCode 16
+        versionName "2.1.0-VarRho"
+        buildConfigField "String", "VAR_RHO_ENGINE", "\"v1.0-Research-IEEE-ASTM\""
+        buildConfigField "String", "GITHUB_URL", "\"https://github.com/Nasir684/WanaLab-Toolkit\""
+    }
