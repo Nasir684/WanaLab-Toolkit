@@ -1,5 +1,5 @@
 name: wanalab_toolkit
-description: WanaLab Toolkit v5.1.0 - TRUE COMPLETE - 13 Pages - Oct20 12 Modes + Oct21 9 Workshops + Collaboration - 50+ Features - Languages en/ur/ar/ps - 7 Religions Equal - Pollution Hidden Lab + Student Labs + Collaboration
+description: WanaLab Toolkit
 publish_to: 'none'
 version: 5.1.0+23
 
@@ -24,7 +24,3 @@ flutter:
   assets:
     - assets/
     - assets/calculators/
-    - app.icon.1024.jpg
-    - github_banner_varrho.jpg
-    - screenshot_rho_calculator.jpg
-    - screenshot_var_calculator.jpg
