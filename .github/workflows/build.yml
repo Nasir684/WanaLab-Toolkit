@@ -20,7 +20,7 @@ jobs:
           flutter-version: '3.22.2'
           channel: 'stable'
 
-      - name: Purge wrong EMI paths only
+      - name: Purge wrong paths only
         run: |
           rm -rf kotlin/ build/ .dart_tool/ || true
           ls -la
@@ -28,7 +28,9 @@ jobs:
       - name: Recreate standard Android project
         run: |
           flutter create --platforms=android --org com.wanalab --project-name wanalab_toolkit . --overwrite
-          ls android/app/src/main/kotlin/com/wanalab/toolkit/
+          echo "Checking correct path:"
+          find android -name "MainActivity.kt"
+          ls android/app/src/main/kotlin/com/wanalab/wanalab_toolkit/
 
       - name: Build clean APK
         run: |
