@@ -20,20 +20,24 @@ jobs:
           flutter-version: '3.22.2'
           channel: 'stable'
 
-      - name: Backup WanaLab main.dart
+      - name: Backup WanaLab main.dart and pubspec.yaml
         run: |
           cp lib/main.dart /tmp/main.dart.bak
+          cp pubspec.yaml /tmp/pubspec.yaml.bak
+          cp pubspec.lock /tmp/pubspec.lock.bak 2>/dev/null || true
           head -5 lib/main.dart
+          echo "--- pubspec.yaml backed up ---"
+          head -10 pubspec.yaml
 
-      - name: Purge wrong paths only
-        run: rm -rf kotlin/ build/ .dart_tool/ || true
-
-      - name: Recreate standard Android project safely
+      - name: Recreate Android project safely without losing dependencies
         run: |
           flutter create --platforms=android --org com.wanalab --project-name wanalab_toolkit . --overwrite
           cp /tmp/main.dart.bak lib/main.dart
+          cp /tmp/pubspec.yaml.bak pubspec.yaml
+          if [ -f /tmp/pubspec.lock.bak ]; then cp /tmp/pubspec.lock.bak pubspec.lock; fi
+          echo "--- Restored ---"
           head -5 lib/main.dart
-          find android -name "MainActivity.kt"
+          grep -q "url_launcher" pubspec.yaml && echo "pubspec.yaml RESTORED OK - url_launcher found" || echo "ERROR pubspec not restored"
 
       - name: Build clean APK
         run: |
