@@ -1,0 +1,91 @@
+import 'package:flutter/material.dart';
+
+import '../services/storage_service.dart';
+
+class GymScreen extends StatefulWidget {
+  const GymScreen({super.key});
+
+  @override
+  State<GymScreen> createState() => _GymScreenState();
+}
+
+class _GymScreenState extends State<GymScreen> {
+  static const String _prefsKey = 'gym_stats';
+
+  int water = 0;
+  int steps = 0;
+  int reps = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final values = await StorageService.getStringList(_prefsKey);
+    if (values.length >= 3) {
+      setState(() {
+        water = int.tryParse(values[0]) ?? 0;
+        steps = int.tryParse(values[1]) ?? 0;
+        reps = int.tryParse(values[2]) ?? 0;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    await StorageService.setStringList(_prefsKey, [water.toString(), steps.toString(), reps.toString()]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('HEALTH & GYM'),
+        backgroundColor: const Color(0xFF0F766E),
+        foregroundColor: Colors.white,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _gymCard('Water Intake', water, () async {
+            setState(() => water--);
+            await _save();
+          }, () async {
+            setState(() => water++);
+            await _save();
+          }),
+          _gymCard('Steps', steps, () async {
+            setState(() => steps--);
+            await _save();
+          }, () async {
+            setState(() => steps++);
+            await _save();
+          }),
+          _gymCard('Reps', reps, () async {
+            setState(() => reps--);
+            await _save();
+          }, () async {
+            setState(() => reps++);
+            await _save();
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _gymCard(String label, int value, Future<void> Function() onMinus, Future<void> Function() onPlus) {
+    return Card(
+      child: ListTile(
+        title: Text('$label: $value', style: const TextStyle(fontSize: 12)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(icon: const Icon(Icons.remove), onPressed: () => onMinus()),
+            IconButton(icon: const Icon(Icons.add), onPressed: () => onPlus()),
+          ],
+        ),
+      ),
+    );
+  }
+}
