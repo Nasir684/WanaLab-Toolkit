@@ -1,15 +1,14 @@
-name: WanaLab Toolkit - VarRho Build v2.1.0+16
+name: WanaLab-FINAL-Clean-Build
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -21,77 +20,23 @@ jobs:
           flutter-version: '3.22.2'
           channel: 'stable'
 
-      - name: Check clean repo
+      - name: Purge wrong EMI paths only
         run: |
+          rm -rf kotlin/ build/ .dart_tool/ || true
           ls -la
-          cat pubspec.yaml
-          ls -la lib/
 
-      - name: Recreate Fresh Android v2 Project (Remove EMI v1)
+      - name: Recreate standard Android project
         run: |
-          # This creates a 100% clean v2 Android folder
-          flutter create --platforms=android --org com.wanalab --project-name wanalab_toolkit .
-          # Restore our lib/main.dart (flutter create overwrites it)
-          git checkout -- lib/main.dart || echo "keep current main.dart"
+          flutter create --platforms=android --org com.wanalab --project-name wanalab_toolkit . --overwrite
+          ls android/app/src/main/kotlin/com/wanalab/toolkit/
 
-      - name: Inject VarRho BuildConfig
+      - name: Build clean APK
         run: |
-          cat > android/app/build.gradle << 'GRADLE'
-          plugins {
-              id "com.android.application"
-              id "kotlin-android"
-              id "dev.flutter.flutter-gradle-plugin"
-          }
+          flutter pub get
+          flutter build apk --debug --build-name=2.1.0 --build-number=19
 
-          android {
-              namespace "com.wanalab.toolkit"
-              compileSdk 34
-              ndkVersion flutter.ndkVersion
-
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_1_8
-                  targetCompatibility JavaVersion.VERSION_1_8
-              }
-
-              kotlinOptions {
-                  jvmTarget = '1.8'
-              }
-
-              sourceSets {
-                  main.java.srcDirs += 'src/main/kotlin'
-              }
-
-              defaultConfig {
-                  applicationId "com.wanalab.toolkit"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 16
-                  versionName "2.1.0-VarRho"
-                  buildConfigField "String", "VAR_RHO_ENGINE", "\"v1.0-Research-IEEE-ASTM\""
-                  buildConfigField "String", "GITHUB_URL", "\"https://github.com/Nasir684/WanaLab-Toolkit\""
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.debug
-                  }
-              }
-          }
-
-          flutter {
-              source '../..'
-          }
-          GRADLE
-          cat android/app/build.gradle
-
-      - name: Get deps
-        run: flutter pub get
-
-      - name: Build APK - v2 Embedding
-        run: flutter build apk --debug --build-name=2.1.0-VarRho --build-number=16
-
-      - name: Upload APK
+      - name: Upload FINAL APK
         uses: actions/upload-artifact@v4
         with:
-          name: WanaLab-Toolkit-v2.1.0-VarRho
+          name: WanaLab-FINAL-FIXED-19-NO-BUG
           path: build/app/outputs/flutter-apk/app-debug.apk
