@@ -1,7 +1,7 @@
 name: wanalab_toolkit
-description: WanaLab Toolkit - Powered by VarRho Engine v1.0 IEEE-ASTM
+description: WanaLab Toolkit - Powered by VarRho Engine v1.0 IEEE-ASTM - ALL 9 LOCKED WORKSHOPS - CORE+GPS+BABY+EMI+GYM+WORKSHOP+VarRho+IMPORT+SETTINGS - 50+ Features - No Ads - Offline till 2037 - Private by design - For All Religions Equal
 publish_to: 'none'
-version: 2.1.0+19
+version: 4.0.0+21
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -24,7 +24,13 @@ flutter:
   assets:
     - assets/
     - assets/calculators/
+    # Root JPGs - existing files - for backward compat
     - app.icon.1024.jpg
     - github_banner_varrho.jpg
     - screenshot_rho_calculator.jpg
     - screenshot_var_calculator.jpg
+    # Assets folder JPGs - FIXED gallery positions - NEW - REQUIRED for GalleryFinal
+    - assets/app.icon.1024.jpg
+    - assets/github_banner_varrho.jpg
+    - assets/screenshot_var_calculator.jpg
+    - assets/screenshot_rho_calculator.jpg
