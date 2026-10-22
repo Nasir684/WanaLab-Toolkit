@@ -25,8 +25,6 @@ flutter:
     - assets/
     - assets/calculators/
     - app.icon.1024.jpg
-    - github_banner.jpg
-    - screenshot_rho.jpg
-    - screenshot_var.jpg
-    - PRIVACY_POLICY.md
-    - README.md
+    - github_banner_varrho.jpg
+    - screenshot_rho_calculator.jpg
+    - screenshot_var_calculator.jpg
