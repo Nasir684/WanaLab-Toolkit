@@ -1,5 +1,5 @@
 name: wanalab_toolkit
-description: WanaLab Toolkit v5.1.0 - TRUE COMPLETE - 13 Pages - Oct20 12 Modes + Oct21 9 Workshops + Collaboration - 50+ Features - Languages en/ur/ar/ps - 7 Religions Equal - Pollution Hidden Labs ADDED - Collaboration University NGO Clinic Gov - Data Privacy Private No server No Ads - Export/Import 2 ways - Update Options preserved - Offline till 2037 - Private by design - For All Religions Equal
+description: WanaLab Toolkit v5.1.0 - TRUE COMPLETE - 13 Pages - Oct20 12 Modes + Oct21 9 Workshops + Collaboration - 50+ Features - Languages en/ur/ar/ps - 7 Religions Equal - Pollution Hidden Lab + Student Labs + Collaboration
 publish_to: 'none'
 version: 5.1.0+23
 
@@ -28,7 +28,3 @@ flutter:
     - github_banner_varrho.jpg
     - screenshot_rho_calculator.jpg
     - screenshot_var_calculator.jpg
-    - assets/app.icon.1024.jpg
-    - assets/github_banner_varrho.jpg
-    - assets/screenshot_var_calculator.jpg
-    - assets/screenshot_rho_calculator.jpg
