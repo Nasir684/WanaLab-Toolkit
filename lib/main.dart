@@ -68,7 +68,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-// DASHBOARD - 9 WORKSHOPS
 class DashboardFinal extends StatelessWidget {
   const DashboardFinal({super.key});
   @override
@@ -99,7 +98,6 @@ class DashboardFinal extends StatelessWidget {
   }
 }
 
-// WORKSHOP 39 WORKING
 class WorkshopFinal extends StatefulWidget { const WorkshopFinal({super.key}); @override State<WorkshopFinal> createState()=>_WorkshopFinalState(); }
 class _WorkshopFinalState extends State<WorkshopFinal> {
   String q=''; final List<Map<String,dynamic>> calcs=const[
@@ -196,7 +194,6 @@ class _CalcDetailFinalState extends State<CalcDetailFinal> {
   @override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:Text(widget.name, style:const TextStyle(fontSize:13)),backgroundColor:Colors.teal,foregroundColor:Colors.white), body:SingleChildScrollView(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Text(widget.formula, style: const TextStyle(fontSize:16, fontWeight: FontWeight.bold)), const SizedBox(height:16), TextField(controller:c1, keyboardType:TextInputType.number, decoration:const InputDecoration(labelText:'Value 1', border: OutlineInputBorder())), const SizedBox(height:12), TextField(controller:c2, keyboardType:TextInputType.number, decoration:const InputDecoration(labelText:'Value 2', border: OutlineInputBorder())), const SizedBox(height:12), TextField(controller:c3, keyboardType:TextInputType.number, decoration:const InputDecoration(labelText:'Value 3 (optional)', border: OutlineInputBorder())), const SizedBox(height:16), ElevatedButton.icon(onPressed:calc, icon:const Icon(Icons.calculate_rounded), label:const Text('Calculate'), style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white)), const SizedBox(height:16), if(res.isNotEmpty) Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.teal)), child: Text(res, style: const TextStyle(fontSize: 14))), const SizedBox(height:30)]))); }
 }
 
-// VARRHO FINAL
 class VarRhoFinal extends StatefulWidget { const VarRhoFinal({super.key}); @override State<VarRhoFinal> createState()=>_VarRhoFinalState(); }
 class _VarRhoFinalState extends State<VarRhoFinal> {
   String method='var'; String rhoMethod='soil_wenner';
@@ -208,7 +205,7 @@ class _VarRhoFinalState extends State<VarRhoFinal> {
   void calc(){ try{
     if(method=='var'){ double kW=double.parse(kw.text); double PF=double.parse(pf.text); double kVA=kW/PF; double th=acos(PF)*180/pi; double kVAR=kW*tan(acos(PF)); setState(()=>res='✓ IEEE Std 1459-2010\n\nkVA=$kVA\nθ=${th.toStringAsFixed(2)}°\nkVAR=${kVAR.toStringAsFixed(4)}'); }
     else if(rhoMethod=='soil_wenner'){ double aa=double.parse(a.text); double rr=double.parse(r.text); double rho=2*pi*aa*rr; setState(()=>res='✓ Soil Rho Wenner ASTM G57-20\n\nρ = 2π a R\nρ=${rho.toStringAsFixed(4)} Ω·m'); }
-    else if(rhoMethod=='material'){ double rr=double.parse(r2.text); double aa2=double.parse(area.text); double ll=double.parse(len.text); double rho=rr*aa2/ll; setState(()=>res='✓ Material Resistivity\n\nρ = R A / L\nρ=${rho.toStringAsFixed(6)} Ω·m'); }
+    else if(rhoMethod=='material'){ double rr=double.parse(area.text); double aa2=double.parse(area.text); double ll=double.parse(len.text); double rho=rr*aa2/ll; setState(()=>res='✓ Material Resistivity\n\nρ = R A / L\nρ=${rho.toStringAsFixed(6)} Ω·m'); }
     else { double mm=double.parse(m.text); double vv=double.parse(vol.text); double rho=mm/vv; setState(()=>res='✓ Density/Resistivity\n\nρ = m/V\nρ=${rho.toStringAsFixed(4)} kg/m³'); }
   }catch(e){ setState(()=>res='Invalid: $e'); }}
   @override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:const Text('VarRho Engine v1.0 IEEE+ASTM Research'),backgroundColor:Colors.teal,foregroundColor:Colors.white), body:SingleChildScrollView(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
@@ -232,29 +229,68 @@ class _VarRhoFinalState extends State<VarRhoFinal> {
   ])));} 
 }
 
-// GPS FINAL
-class GPSFinal extends StatelessWidget { const GPSFinal({super.key}); @override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:const Text('GPS & Maps Workshop - Private Offline'),backgroundColor:Colors.teal,foregroundColor:Colors.white), body:SingleChildScrollView(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
-  Card(child:Padding(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children: const[Text('GPS Save - Lat/Lng Title Notes Timestamp', style:TextStyle(fontWeight:FontWeight.bold)), SizedBox(height:4), Text('Private offline save with date/time and search metadata.')]))) ,
-  const SizedBox(height:12),
-  Card(child:Padding(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children: const[Text('GPS Track - KML/GPX Offline Path', style:TextStyle(fontWeight:FontWeight.bold)), SizedBox(height:4), Text('Track path and export/import KML/GPX for field visits and journaling.')]))) ,
-  const SizedBox(height:12),
-  Card(child:Padding(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children: const[Text('Offline Maps - Flutter_map MBTiles', style:TextStyle(fontWeight:FontWeight.bold)), SizedBox(height:4), Text('Use local map tiles for offline navigation and project planning.')]))) ,
-  const SizedBox(height:12),
-  Card(child:Padding(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children: const[Text('Traveler Journals - 3 free demo unlimited Pro', style:TextStyle(fontWeight:FontWeight.bold)), SizedBox(height:4), Text('Store notes, coordinates, and observations locally without cloud tracking.')]))) ,
-]));} }
+// GPS FINAL - FIXED GREEN
+class GPSFinal extends StatelessWidget {
+  const GPSFinal({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('GPS & Maps Workshop - Private Offline'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('GPS Save - Lat/Lng Title Notes Timestamp', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text('Private offline save with date/time and search metadata.'),
+          ]))),
+          SizedBox(height: 12),
+          Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('GPS Track - KML/GPX Offline Path', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text('Track path and export/import KML/GPX for field visits and journaling.'),
+          ]))),
+          SizedBox(height: 12),
+          Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Offline Maps - Flutter_map MBTiles', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text('Use local map tiles for offline navigation and project planning.'),
+          ]))),
+          SizedBox(height: 12),
+          Card(child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Traveler Journals - 3 free demo unlimited Pro', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text('Store notes, coordinates, and observations locally without cloud tracking.'),
+          ]))),
+        ],
+      ),
+    );
+  }
+}
 
-// BABY FINAL
-class BabyFinal extends StatelessWidget { const BabyFinal({super.key}); @override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:const Text('Baby Wellness + Health Gym + EMI'),backgroundColor:Colors.teal,foregroundColor:Colors.white), body:SingleChildScrollView(padding:const EdgeInsets.all(16), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
-  Card(child:ListTile(leading:Icon(Icons.local_drink, color:Colors.blue), title:Text('Feeding Log - Breast/Bottle/Solid'), subtitle:Text('Time, type, amount, and notes for baby wellness tracking.'))),
-  Card(child:ListTile(leading:Icon(Icons.bedtime, color:Colors.indigo), title:Text('Sleep Log - Start/End Duration'), subtitle:Text('Track baby sleep patterns and daily routines.'))),
-  Card(child:ListTile(leading:Icon(Icons.baby_changing_station, color:Colors.orange), title:Text('Diaper Log - Wet/Dirty'), subtitle:Text('Simple, private daily diaper tracking.'))),
-  Card(child:ListTile(leading:Icon(Icons.monitor_weight, color:Colors.green), title:Text('Weight/Height/Temp - Clinic Card'), subtitle:Text('Use hospital/clinic values for wellness history.'))),
-  Card(child:ListTile(leading:Icon(Icons.vaccines, color:Colors.red), title:Text('Vaccination Log'), subtitle:Text('Record vaccine dates and notes locally.'))),
-  Card(child:ListTile(leading:Icon(Icons.water_drop, color:Colors.blue), title:Text('Health Gym - Water Steps Sleep Workout Rep'), subtitle:Text('Daily wellness tracking for health and exercise.'))),
-  Card(child:ListTile(leading:Icon(Icons.wifi, color:Colors.orange), title:Text('EMI Source + Measurement + Mitigation'), subtitle:Text('Simple EMI awareness and exposure notes.'))),
-]));} }
+// BABY FINAL - FIXED GREEN
+class BabyFinal extends StatelessWidget {
+  const BabyFinal({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Baby Wellness + Health Gym + EMI'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          Card(child: ListTile(leading: Icon(Icons.local_drink, color: Colors.blue), title: Text('Feeding Log - Breast/Bottle/Solid'), subtitle: Text('Time, type, amount, and notes for baby wellness tracking.'))),
+          Card(child: ListTile(leading: Icon(Icons.bedtime, color: Colors.indigo), title: Text('Sleep Log - Start/End Duration'), subtitle: Text('Track baby sleep patterns and daily routines.'))),
+          Card(child: ListTile(leading: Icon(Icons.baby_changing_station, color: Colors.orange), title: Text('Diaper Log - Wet/Dirty'), subtitle: Text('Simple, private daily diaper tracking.'))),
+          Card(child: ListTile(leading: Icon(Icons.monitor_weight, color: Colors.green), title: Text('Weight/Height/Temp - Clinic Card'), subtitle: Text('Use hospital/clinic values for wellness history.'))),
+          Card(child: ListTile(leading: Icon(Icons.vaccines, color: Colors.red), title: Text('Vaccination Log'), subtitle: Text('Record vaccine dates and notes locally.'))),
+          Card(child: ListTile(leading: Icon(Icons.water_drop, color: Colors.blue), title: Text('Health Gym - Water Steps Sleep Workout Rep'), subtitle: Text('Daily wellness tracking for health and exercise.'))),
+          Card(child: ListTile(leading: Icon(Icons.wifi, color: Colors.orange), title: Text('EMI Source + Measurement + Mitigation'), subtitle: Text('Simple EMI awareness and exposure notes.'))),
+        ],
+      ),
+    );
+  }
+}
 
-// GALLERY - FIXED JPG NAMES
 class GalleryFinal extends StatelessWidget {
   const GalleryFinal({super.key});
   Widget jpgCard(String title, String asset){
@@ -274,7 +310,6 @@ class GalleryFinal extends StatelessWidget {
   }
 }
 
-// ABOUT FINAL
 class AboutFinal extends StatelessWidget {
   const AboutFinal({super.key});
   Future<void> open(String url) async { final u=Uri.parse(url); if(await canLaunchUrl(u)) await launchUrl(u, mode:LaunchMode.externalApplication); }
