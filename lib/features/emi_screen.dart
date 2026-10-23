@@ -1,91 +1,98 @@
 import 'package:flutter/material.dart';
 
-import '../services/storage_service.dart';
+import '../services/export_service.dart';
 
-class BabyScreen extends StatefulWidget {
-  const BabyScreen({super.key});
+class EMIScreen extends StatefulWidget {
+  const EMIScreen({super.key});
 
   @override
-  State<BabyScreen> createState() => _BabyScreenState();
+  State<EMIScreen> createState() => _EMIScreenState();
 }
 
-class _BabyScreenState extends State<BabyScreen> {
-  static const String _prefsKey = 'baby_logs';
-  List<String> logs = <String>[];
+class _EMIScreenState extends State<EMIScreen> {
+  final controller = TextEditingController(text: '2.5');
+  String result = '';
+  List<Map<String, dynamic>> exportRows = const [];
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void calculate() {
+    final value = double.tryParse(controller.text) ?? 0.0;
 
-  Future<void> _load() async {
-    logs = await StorageService.getStringList(_prefsKey);
-    if (mounted) setState(() {});
-  }
+    if (value <= 0) {
+      setState(() {
+        result = 'E-field must be greater than 0 V/m.';
+        exportRows = const [];
+      });
+      return;
+    }
 
-  Future<void> _save() async {
-    await StorageService.setStringList(_prefsKey, logs);
-  }
+    final magneticField = value / 377.0;
 
-  Future<void> addLog(String item) async {
-    setState(() => logs.insert(0, '$item - ${DateTime.now().toString().split(' ')[0]}'));
-    await _save();
+    final rows = <Map<String, dynamic>>[
+      {
+        'Name': 'EMI Awareness',
+        'E-field (V/m)': value,
+        'H-field (A/m)': magneticField,
+      }
+    ];
+
+    setState(() {
+      exportRows = rows;
+      result = 'E = $value V/m\nH = ${magneticField.toStringAsFixed(6)} A/m\nEMI awareness only';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BABY WELLNESS'),
+        title: const Text('EMI WELLNESS'),
         backgroundColor: const Color(0xFF0F766E),
         foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _chip('Feeding', () => addLog('Feeding Log')),
-              _chip('Sleep', () => addLog('Sleep Log')),
-              _chip('Diaper', () => addLog('Diaper Log')),
-              _chip('Mood', () => addLog('Mood Log')),
-              _chip('Vaccination', () => addLog('Vaccination Log')),
-              _chip('Milestones', () => addLog('Milestone Log')),
-            ],
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'E-field V/m',
+              border: OutlineInputBorder(),
+            ),
           ),
-          const Divider(),
-          if (logs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text('No baby wellness entries yet.', style: TextStyle(color: Color(0xFF0F766E), fontSize: 11)),
-            )
-          else
-            ...logs.map(
-              (item) => Card(
-                child: ListTile(
-                  title: Text(item, style: const TextStyle(fontSize: 10)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    onPressed: () async {
-                      setState(() => logs.remove(item));
-                      await _save();
-                    },
-                  ),
-                ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: calculate,
+            icon: const Icon(Icons.calculate),
+            label: const Text('Calculate'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F766E),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (result.isNotEmpty)
+            Card(
+              color: const Color(0xFFCCFBF1),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(result, style: const TextStyle(fontSize: 11)),
               ),
             ),
+          if (exportRows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => ExportService.exportRows(
+                context,
+                exportRows,
+                title: 'EMI results',
+              ),
+              icon: const Icon(Icons.download_rounded),
+              label: const Text('Export CSV / TXT'),
+            ),
+          ],
         ],
       ),
-    );
-  }
-
-  Widget _chip(String label, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: Text(label, style: const TextStyle(fontSize: 10)),
     );
   }
 }
