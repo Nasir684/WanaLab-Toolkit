@@ -1,5 +1,4 @@
-name: WanaLab-FINAL-Clean-Build
-
+name: build
 on:
   workflow_dispatch:
   push:
@@ -9,27 +8,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Enable long paths and checkout
-        run: |
-          git config --global core.longpaths true
-          git clone --depth 1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
-          git config --global --add safe.directory $(pwd)
+      - name: Checkout only needed files (skip long build folder)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            lib
+            android
+            ios
+            assets
+            web
+            pubspec.yaml
+            pubspec.lock
+            analysis_options.yaml
+            .gitignore
+            README.md
+          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
 
-      - name: Clean old builds
-        run: |
-          rm -rf build/
-          rm -rf .dart_tool/
-      
       - name: Build clean APK
         run: |
           flutter clean
