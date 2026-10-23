@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class VarrhoScreen extends StatefulWidget {
-  const VarrhoScreen({super.key});
+class VarRhoScreen extends StatefulWidget {
+  const VarRhoScreen({super.key});
 
   @override
-  State<VarrhoScreen> createState() => _VarrhoScreenState();
+  State<VarRhoScreen> createState() => _VarRhoScreenState();
 }
 
-class _VarrhoScreenState extends State<VarrhoScreen> {
+class _VarRhoScreenState extends State<VarRhoScreen> {
   String query = '';
 
   final List<Map<String, String>> topics = [
