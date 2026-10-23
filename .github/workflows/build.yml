@@ -2,16 +2,19 @@ name: WanaLab-FINAL-Clean-Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout with long paths
+      - name: Enable long paths and checkout
         run: |
           git config --global core.longpaths true
-          git clone --depth 1 https://github.com/${{ github.repository }}.git .
-      
+          git clone --depth 1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+          git config --global --add safe.directory $(pwd)
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -22,11 +25,11 @@ jobs:
           flutter-version: '3.24.5'
           channel: 'stable'
 
-      - name: Check Android folder exists
+      - name: Clean old builds
         run: |
-          ls -la
-          ls -la android/ || echo "No android folder"
-
+          rm -rf build/
+          rm -rf .dart_tool/
+      
       - name: Build clean APK
         run: |
           flutter clean
