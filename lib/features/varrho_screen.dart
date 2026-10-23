@@ -11,11 +11,16 @@ class _VarRhoScreenState extends State<VarRhoScreen> {
   String query = '';
 
   final List<Map<String, String>> topics = [
-    {'title': 'Varroa Destructor Biology', 'desc': 'Mite lifecycle research'},
-    {'title': 'Colony Collapse Study', 'desc': 'EMI + Varroa combined effects'},
-    {'title': 'Thermal Treatment', 'desc': 'Heat treatment research data'},
-    {'title': 'Organic Acid Treatment', 'desc': 'Formic / Oxalic acid notes'},
-    {'title': 'Wana Local Survey', 'desc': 'Local beekeepers data - Offline'},
+    {'title': 'VarRho Estimation Engine', 'desc': 'ρ = R×A/L - Resistivity research core'},
+    {'title': 'EMI Screening Research', 'desc': 'Exposure & shielding estimation'},
+    {'title': 'Detector Risk Analysis', 'desc': 'Detector & sensor risk workflows'},
+    {'title': 'Workshop Estimation', 'desc': 'Engineering calculations support'},
+    {'title': 'Scenario Planning', 'desc': 'Compare multiple research scenarios'},
+    {'title': 'Assumptions Documentation', 'desc': 'Scientific notes & reproducibility'},
+    {'title': 'Structured Reporting', 'desc': 'Technical export & sharing'},
+    {'title': 'Wenner Soil Resistivity', 'desc': 'ρ = 2πaR - ASTM field method'},
+    {'title': 'Local-Only Research', 'desc': 'Offline records - No cloud dependency'},
+    {'title': 'Future Evolution 2037', 'desc': 'Long-term research platform roadmap'},
   ];
 
   @override
@@ -24,7 +29,7 @@ class _VarRhoScreenState extends State<VarRhoScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF061B2A),
       appBar: AppBar(
-        title: const Text('VARROA RESEARCH'),
+        title: const Text('VARRHO RESEARCH'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
@@ -55,7 +60,7 @@ class _VarRhoScreenState extends State<VarRhoScreen> {
             child: ListTile(
               title: Text(item['title']!, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               subtitle: Text(item['desc']!, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-              leading: const Icon(Icons.bug_report, color: Color(0xFF0F766E)),
+              leading: const Icon(Icons.science_rounded, color: Color(0xFF0F766E)),
             ),
           )),
         ],
