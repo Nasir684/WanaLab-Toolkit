@@ -1,0 +1,38 @@
+name: WanaLab-FINAL-Clean-Build
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+
+      - name: Check Android folder exists
+        run: |
+          ls -la android/app/
+          echo "--- build.gradle exists? ---"
+          ls android/app/build.gradle
+          cat android/app/build.gradle | head -20
+
+      - name: Build clean APK
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build apk --debug --build-name=1.5.0 --build-number=34
+
+      - name: Upload FINAL APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WanaLab-FINAL-CLEAN-34
+          path: build/app/outputs/flutter-apk/app-debug.apk
