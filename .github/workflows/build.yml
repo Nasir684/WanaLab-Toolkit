@@ -14,7 +14,7 @@ jobs:
           flutter-version: '3.24.5'
           channel: 'stable'
 
-      - name: Download files (skip 1 broken file)
+      - name: Download (skip 1 broken file)
         run: |
           python3 - << 'PY'
           import tarfile, urllib.request, os
@@ -29,27 +29,39 @@ jobs:
               if not m.isfile(): continue
               d=os.path.dirname(inner)
               if d: os.makedirs(d,exist_ok=True)
-              try:
-                open(inner,"wb").write(tar.extractfile(m).read())
-                print(f"OK: {inner}")
+              try: open(inner,"wb").write(tar.extractfile(m).read())
               except: pass
           PY
 
-      - name: Fix pubspec.yaml - update geolocator
+      - name: FIX - Force geolocator 12.0.0
         run: |
-          echo "--- BEFORE ---"
+          echo "=== OLD pubspec.yaml ==="
           cat pubspec.yaml
-          # Update old geolocator to new version that has compileSdkVersion
-          sed -i 's/geolocator:.*/geolocator: ^12.0.0/' pubspec.yaml
-          sed -i 's/url_launcher:.*/url_launcher: ^6.2.5/' pubspec.yaml
-          sed -i 's/geocoding:.*/geocoding: ^3.0.0/' pubspec.yaml || true
-          echo "--- AFTER ---"
+          
+          # Use Python to properly edit pubspec.yaml
+          python3 - << 'PY'
+          with open("pubspec.yaml","r") as f:
+            content = f.read()
+          # Force replace geolocator line
+          import re
+          content = re.sub(r'geolocator:.*', 'geolocator: ^12.0.0', content)
+          content = re.sub(r'geolocator_android:.*', '', content)
+          content = re.sub(r'geocoding:.*', 'geocoding: ^3.0.0', content)
+          with open("pubspec.yaml","w") as f:
+            f.write(content)
+          print(content)
+          PY
+          
+          echo "=== NEW pubspec.yaml ==="
           cat pubspec.yaml
-          # Fresh android folder
-          rm -rf android
+          
+          # VERY IMPORTANT: Delete lock file and rebuild
+          rm -rf android pubspec.lock
           flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
-          flutter pub upgrade
+          flutter clean
+          flutter pub upgrade --major-versions
           flutter pub get
+          flutter pub deps | grep geolocator
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
