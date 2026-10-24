@@ -23,10 +23,9 @@ jobs:
                       if f: open(inner, "wb").write(f.read())
           PY
 
-      - name: Create local.properties
+      - name: Create local.properties + namespace
         run: |
           echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
-          cat android/local.properties
           if ! grep -q "namespace" android/app/build.gradle; then
             sed -i "/^android {/a \    namespace 'com.example.wana_lab_toolkit'" android/app/build.gradle
           fi
@@ -43,24 +42,22 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Patch geolocator_android 4.6.2 bug
+      - name: PATCH ALL plugins with flutter. bug
         run: |
-          GEO_FILE=$(find ~/.pub-cache -path "*geolocator_android-*/android/build.gradle" | head -1)
-          echo "Found: $GEO_FILE"
-          cat "$GEO_FILE" | head -60
-          # Replace flutter.* properties with hardcoded values
-          sed -i "s/flutter.compileSdkVersion/34/g" "$GEO_FILE"
-          sed -i "s/flutter.minSdkVersion/21/g" "$GEO_FILE"
-          sed -i "s/flutter.targetSdkVersion/34/g" "$GEO_FILE"
-          sed -i "s/flutter.ndkVersion/\"27.0.120\"/g" "$GEO_FILE"
-          sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g" "$GEO_FILE"
-          sed -i "s/compileSdk flutter.compileSdkVersion/compileSdk 34/g" "$GEO_FILE"
-          # Also add namespace if missing
-          if ! grep -q "namespace" "$GEO_FILE"; then
-            sed -i "/^android {/a \    namespace 'com.baseflow.geolocator_android'" "$GEO_FILE"
-          fi
-          echo "--- PATCHED ---"
-          cat "$GEO_FILE" | head -60
+          echo "Searching for broken build.gradle files..."
+          find $HOME -type f -path "*geolocator_android*/android/build.gradle" -o -path "*geocoding_android*/android/build.gradle" -o -path "*permission_handler_android*/android/build.gradle" | head -20
+          
+          # Patch EVERY build.gradle in pub cache that uses flutter.*
+          find $HOME -type f -name "build.gradle" | xargs grep -l "flutter\." 2>/dev/null | while read FILE; do
+            echo "Patching $FILE"
+            sed -i "s/flutter.compileSdkVersion/34/g" "$FILE"
+            sed -i "s/flutter.minSdkVersion/21/g" "$FILE"
+            sed -i "s/flutter.targetSdkVersion/34/g" "$FILE"
+            sed -i "s/flutter.ndkVersion/\"27.0.120\"/g" "$FILE"
+            sed -i "s/def flutterVersionCode.*/def flutterVersionCode = '1'/g" "$FILE" || true
+            sed -i "s/def flutterVersionName.*/def flutterVersionName = '1.0'/g" "$FILE" || true
+          done
+          echo "All patched"
 
       - run: flutter clean
       - run: flutter build apk --release --no-tree-shake-icons
