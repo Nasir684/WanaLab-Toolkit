@@ -1,193 +1,51 @@
 name: build
-on: [workflow_dispatch]
+on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.3'
-          channel: 'stable'
-          cache: true
+          flutter-version: '3.22.0'
 
-      - name: Build WanaLab v3.5 FULL FIXED
+      - name: Create all dart files
         run: |
-          flutter create . --project-name wanalab --org com.wanalab --platforms android
-          mkdir -p lib/features/sensors lib/features/camera lib/features/religion lib/features/language lib/features/phd lib/features/dev lib/features/detector lib/services assets
-
-          # ICON
-          pip install pillow -q
-          python3 -c "from PIL import Image; im=Image.new('RGB',(1024,1024),(37,99,235)); im.save('assets/icon.png')"
-          
-          # PUBSPEC
-          cat > pubspec.yaml << 'YAML'
-          name: wanalab
-          description: WanaLab Toolkit - Research platform local-only
-          publish_to: 'none'
-          version: 3.5.0+35
-          environment:
-            sdk: '>=3.0.0 <4.0.0'
-          dependencies:
-            flutter:
-              sdk: flutter
-            shared_preferences: ^2.2.2
-            geolocator: ^10.1.0
-            sensors_plus: ^6.0.1
-            mobile_scanner: ^5.2.3
-            image_picker: ^1.1.2
-            google_mlkit_text_recognition: ^0.13.1
-            adhan: ^2.0.0+1
-            hijri: ^3.0.0
-            intl: ^0.19.0
-            path_provider: ^2.1.2
-            share_plus: ^7.2.2
-            csv: ^6.0.0
-          flutter:
-            uses-material-design: true
-            assets:
-              - assets/icon.png
-          YAML
-
-          # FIX R8 + NDK - THIS FIXES YOUR SCREENSHOT ERROR 622
-          cat > android/gradle.properties << 'PROP'
-          org.gradle.jvmargs=-Xmx4G
-          android.useAndroidX=true
-          android.enableJetifier=true
-          android.enableR8.fullMode=false
-          android.nonTransitiveRClass=false
-          android.nonFinalResIds=false
-          PROP
-
-          cat > android/app/proguard-rules.pro << 'PRO'
-          -keep class io.flutter.app.** { *; }
-          -keep class io.flutter.plugin.** { *; }
-          -dontwarn **
-          PRO
-
           python3 << 'PY'
-          import pathlib, re
-          f = pathlib.Path("android/app/build.gradle.kts")
-          t = f.read_text()
-          t = t.replace('isMinifyEnabled = true', 'isMinifyEnabled = false')
-          t = t.replace('isShrinkResources = true', 'isShrinkResources = false')
-          if 'ndkVersion' not in t:
-              t = t.replace('namespace =', 'ndkVersion = "27.0.12077973"\n    namespace =')
-          else:
-              t = re.sub(r'ndkVersion = ".*?"', 'ndkVersion = "27.0.12077973"', t)
-          f.write_text(t)
-          print("FIXED GRADLE FILE")
-          PY
-
-          # SERVICES
-          cat > lib/services/storage_service.dart << 'DART'
-          import 'package:shared_preferences/shared_preferences.dart';
-          class StorageService {
-            static Future<void> setList(String k, List<String> v) async { final p=await SharedPreferences.getInstance(); await p.setStringList(k,v); }
-            static Future<List<String>> getList(String k) async { final p=await SharedPreferences.getInstance(); return p.getStringList(k) ?? []; }
-            static Future<void> clearAll() async { final p=await SharedPreferences.getInstance(); await p.clear(); }
-          }
-          DART
-
-          # MAIN + APP
-          cat > lib/main.dart << 'DART'
+          import os
+          # Example - do this for all 24 files
+          os.makedirs("lib/screens", exist_ok=True)
+          
+          # Use triple quotes in python, so 'https:' inside is safe
+          code = """
           import 'package:flutter/material.dart';
-          import 'app.dart';
-          void main(){ WidgetsFlutterBinding.ensureInitialized(); runApp(const WanaLabApp()); }
-          DART
-
-          cat > lib/app.dart << 'DART'
-          import 'package:flutter/material.dart';
-          import 'features/dashboard_screen.dart';
-          import 'features/core_screen.dart';
-          import 'features/gps_screen.dart';
-          import 'features/import_export_screen.dart';
-          import 'features/settings_screen.dart';
-          import 'features/about_screen.dart';
-          import 'features/sensors/compass_screen.dart';
-          import 'features/camera/barcode_screen.dart';
-          import 'features/camera/ocr_screen.dart';
-          import 'features/religion/qibla_screen.dart';
-          import 'features/religion/prayer_screen.dart';
-          import 'features/religion/tasbih_screen.dart';
-          import 'features/religion/zakat_screen.dart';
-          import 'features/language/translator_screen.dart';
-          import 'features/phd/citation_screen.dart';
-          import 'features/phd/statistics_screen.dart';
-          import 'features/phd/notes_screen.dart';
-          import 'features/phd/unit_converter_screen.dart';
-          import 'features/dev/developer_screen.dart';
-          import 'features/dev/pricing_screen.dart';
-          import 'features/dev/demo_screen.dart';
-          import 'features/dev/changelog_screen.dart';
-          import 'features/dev/roadmap_screen.dart';
-          import 'features/detector/emi_screen.dart';
-          import 'features/detector/detector_screen.dart';
-          class WanaLabApp extends StatefulWidget { const WanaLabApp({super.key}); @override State<WanaLabApp> createState()=>_WanaLabAppState(); }
-          class _WanaLabAppState extends State<WanaLabApp>{
-            int idx=0;
-            final titles=["Dashboard","Core Lab","GPS","Import/Export","Settings","About","Compass","Barcode","OCR","Qibla","Prayer","Tasbih","Zakat","Translator","Citation","Stats","Notes","Converter","Developer","Pricing","Demo","Changelog","Roadmap","EMI","Detector"];
-            final pages=[
-              null, const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(),
-              const CompassScreen(), const BarcodeScreen(), const OCRScreen(), const QiblaScreen(), const PrayerScreen(), const TasbihScreen(),
-              const ZakatScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const UnitConverterScreen(),
-              const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()
-            ];
-            @override
-            Widget build(BuildContext context){
-              return MaterialApp(
-                debugShowCheckedModeBanner:false, title:"WanaLab",
-                theme: ThemeData(useMaterial3:true, colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB))),
-                home: Builder(builder:(ctx){
-                  final isDash = idx==0;
-                  return Scaffold(
-                    appBar: AppBar(title: Text(isDash ? "WanaLab v3.5" : titles[idx])),
-                    body: isDash ? DashboardScreen(onNav:(i)=>setState(()=>idx=i)) : pages[idx]!,
-                    bottomNavigationBar: NavigationBar(selectedIndex: idx>4?0:idx, onDestinationSelected:(i)=>setState(()=>idx=i), destinations: const [
-                      NavigationDestination(icon: Icon(Icons.dashboard), label:"Dash"),
-                      NavigationDestination(icon: Icon(Icons.memory), label:"Core"),
-                      NavigationDestination(icon: Icon(Icons.gps_fixed), label:"GPS"),
-                      NavigationDestination(icon: Icon(Icons.import_export), label:"IO"),
-                      NavigationDestination(icon: Icon(Icons.settings), label:"Set"),
-                    ]),
-                  );
-                }),
-              );
+          import 'package:url_launcher/url_launcher.dart';
+          
+          class MyWidget extends StatelessWidget {
+            void _open(String url) async {
+              final uri = Uri.parse(url);
+              await launchUrl(uri);
             }
-          }
-          DART
-
-          # IMPORT EXPORT - MULTILINE FIXED
-          cat > lib/features/import_export_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class ImportExportScreen extends StatelessWidget {
-            const ImportExportScreen({super.key});
+            
             @override
             Widget build(BuildContext context) {
-              return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Text("Import / Export - Local CSV only"),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.upload),
-                      label: const Text("Export CSV Local"),
-                    )
-                  ],
-                ),
+              return ElevatedButton.icon(
+                onPressed: () => _open('https://google.com'),
+                icon: Icon(Icons.open_in_new),
+                label: Text('Open'),
               );
             }
           }
-          DART
+          """
+          open("lib/screens/my_screen.dart", "w").write(code)
+          PY
 
-          # 23 OTHER SCREENS - ALL CONST
-          cat > lib/features/dashboard_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class DashboardScreen extends StatelessWidget {
-            final
+      - name: Build APK
+        run: flutter build apk --release
