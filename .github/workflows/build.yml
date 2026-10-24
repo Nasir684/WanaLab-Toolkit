@@ -11,7 +11,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.29.3'
           channel: 'stable'
 
       - name: Download (skip 1 broken file)
@@ -33,33 +33,34 @@ jobs:
               except: pass
           PY
 
-      - name: FIX - Force geolocator 12.0.0
+      - name: Fix pubspec - use latest compatible
         run: |
-          echo "=== OLD pubspec.yaml ==="
-          cat pubspec.yaml
-          
-          # Use Python to properly edit pubspec.yaml
-          python3 - << 'PY'
-          with open("pubspec.yaml","r") as f:
-            content = f.read()
-          # Force replace geolocator line
-          import re
-          content = re.sub(r'geolocator:.*', 'geolocator: ^12.0.0', content)
-          content = re.sub(r'geolocator_android:.*', '', content)
-          content = re.sub(r'geocoding:.*', 'geocoding: ^3.0.0', content)
-          with open("pubspec.yaml","w") as f:
-            f.write(content)
-          print(content)
-          PY
-          
-          echo "=== NEW pubspec.yaml ==="
-          cat pubspec.yaml
-          
-          # VERY IMPORTANT: Delete lock file and rebuild
+          cat > pubspec.yaml << 'YAML'
+          name: wana_lab_toolkit
+          description: WanaLab Toolkit
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment:
+            sdk: '>=3.2.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            cupertino_icons: ^1.0.8
+            url_launcher: ^6.2.6
+            geolocator: ^13.0.2
+            geocoding: ^3.0.0
+            permission_handler: ^11.3.1
+            http: ^1.2.2
+            shared_preferences: ^2.3.3
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^4.0.0
+          flutter:
+            uses-material-design: true
+          YAML
           rm -rf android pubspec.lock
           flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
-          flutter clean
-          flutter pub upgrade --major-versions
           flutter pub get
           flutter pub deps | grep geolocator
 
