@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'services/storage_service.dart';
 import 'app.dart';
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await StorageService.init();
   runApp(const WanaLabApp());
 }
