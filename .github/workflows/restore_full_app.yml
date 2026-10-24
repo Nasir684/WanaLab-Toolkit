@@ -14,21 +14,11 @@ jobs:
       - name: Restore FULL WanaLab v3.4.45
         run: |
           python3 << 'PY'
-          import pathlib, textwrap, re
+          import pathlib, textwrap
           def W(p,c):
-            fp=pathlib.Path(p)
-            fp.parent.mkdir(parents=True, exist_ok=True)
-            fp.write_text(textwrap.dedent(c).strip()+"\n")
-
-          # Fix android build.gradle.kts
-          p=pathlib.Path("android/app/build.gradle.kts")
-          if p.exists():
-            t=p.read_text()
-            t=re.sub(r'minSdk\s*=\s*.*','minSdk = 23',t)
-            t=re.sub(r'\s*ndkVersion.*\n','\n',t)
-            if 'ndkVersion' not in t:
-              t=t.replace('android {','android {\n    ndkVersion = flutter.ndkVersion')
-            p.write_text(t)
+              fp=pathlib.Path(p)
+              fp.parent.mkdir(parents=True, exist_ok=True)
+              fp.write_text(textwrap.dedent(c).strip()+"\n")
 
           W("pubspec.yaml", """
           name: wana_lab_toolkit
@@ -37,7 +27,8 @@ jobs:
           environment:
             sdk: '>=3.2.0 <4.0.0'
           dependencies:
-            flutter: {sdk: flutter}
+            flutter:
+              sdk: flutter
             shared_preferences: ^2.3.3
             geolocator: ^13.0.2
             intl: ^0.20.2
@@ -59,6 +50,17 @@ jobs:
             permission_handler: ^11.3.1
           flutter:
             uses-material-design: true
+          """)
+
+          W("lib/main.dart", """
+          import 'package:flutter/material.dart';
+          import 'services/storage_service.dart';
+          import 'app.dart';
+          void main() async {
+            WidgetsFlutterBinding.ensureInitialized();
+            await StorageService.init();
+            runApp(const WanaLabApp());
+          }
           """)
 
           W("lib/services/storage_service.dart", """
@@ -83,17 +85,6 @@ jobs:
                 home: DashboardScreen(),
               );
             }
-          }
-          """)
-
-          W("lib/main.dart", """
-          import 'package:flutter/material.dart';
-          import 'services/storage_service.dart';
-          import 'app.dart';
-          void main() async {
-            WidgetsFlutterBinding.ensureInitialized();
-            await StorageService.init();
-            runApp(const WanaLabApp());
           }
           """)
 
@@ -135,6 +126,6 @@ jobs:
         run: |
           git config user.name "Nasir"
           git config user.email "nasir@wanalab.com"
-          git add pubspec.yaml lib/ android/app/build.gradle.kts
-          git commit -m "Restore FULL WanaLab v3.4.45 - 98 Tools" || echo "no changes"
+          git add .
+          git commit -m "Restore FULL WanaLab v3.4.45" || echo "no changes"
           git push
