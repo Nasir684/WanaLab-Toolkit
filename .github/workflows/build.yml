@@ -22,11 +22,8 @@ jobs:
           pip install pillow -q
           python3 -c "from PIL import Image; im=Image.new('RGB',(1024,1024),(37,99,235)); im.save('assets/icon.png')"
 
-          python3 << 'PY'
-          import pathlib, os
-          
-          # PUBSPEC
-          pathlib.Path("pubspec.yaml").write_text("""
+          # PUBSPEC + GRADLE FIX
+          cat > pubspec.yaml << 'YAML'
           name: wanalab
           description: WanaLab Toolkit
           publish_to: 'none'
@@ -52,158 +49,99 @@ jobs:
             uses-material-design: true
             assets:
               - assets/icon.png
-          """)
+          YAML
 
-          # gradle.properties
-          pathlib.Path("android/gradle.properties").write_text("""org.gradle.jvmargs=-Xmx4G
+          echo "org.gradle.jvmargs=-Xmx4G
           android.useAndroidX=true
           android.enableJetifier=true
-          android.enableR8.fullMode=false
-          android.nonTransitiveRClass=false
-          android.nonFinalResIds=false
-          """)
-          pathlib.Path("android/app/proguard-rules.pro").write_text("-keep class io.flutter.app.** { *; }\n-keep class io.flutter.plugin.** { *; }\n-dontwarn **\n")
+          android.enableR8.fullMode=false" > android/gradle.properties
 
-          # fix build.gradle.kts
-          import re
+          # THIS IS THE FIX - MERGE ALL DARTS WITH PYTHON
+          python3 << 'PY'
+          import pathlib, re, os, textwrap
+          # fix gradle
           f=pathlib.Path("android/app/build.gradle.kts")
           t=f.read_text()
           t=t.replace('isMinifyEnabled = true','isMinifyEnabled = false').replace('isShrinkResources = true','isShrinkResources = false')
-          if 'ndkVersion' not in t:
-            t=t.replace('namespace =','ndkVersion = "27.0.12077973"\n    namespace =')
+          if 'ndkVersion' not in t: t=t.replace('namespace =','ndkVersion = "27.0.12077973"\n    namespace =')
           f.write_text(t)
 
-          # HELPER to make simple screen
-          def mk(path, cls, txt):
-            pathlib.Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(path).write_text(f"""
-          import 'package:flutter/material.dart';
-          class {cls} extends StatelessWidget {{
-            const {cls}({{super.key}});
-            @override
-            Widget build(BuildContext context) {{
-              return Center(child: Text("{txt} - Local only"));
-            }}
-          }}
-          """)
+          # create all 24 screens as simple const to make build pass
+          def write(p,c): pathlib.Path(p).parent.mkdir(parents=True, exist_ok=True); pathlib.Path(p).write_text(textwrap.dedent(c))
 
-          # MERGE DARTS FIRST - 24 files
-          files = [
-            ("lib/services/storage_service.dart","StorageService","""
+          write("lib/services/storage_service.dart","""
           import 'package:shared_preferences/shared_preferences.dart';
           class StorageService {
             static Future<void> setList(String k, List<String> v) async { final p=await SharedPreferences.getInstance(); await p.setStringList(k,v); }
             static Future<List<String>> getList(String k) async { final p=await SharedPreferences.getInstance(); return p.getStringList(k) ?? []; }
-            static Future<void> clearAll() async { final p=await SharedPreferences.getInstance(); await p.clear(); }
-          }
-          """),
-          ]
-          for p,c,_ in files:
-            pass
-
-          # Write storage separately
-          pathlib.Path("lib/services/storage_service.dart").write_text(files[0][2])
-
-          pathlib.Path("lib/main.dart").write_text("import 'package:flutter/material.dart'; import 'app.dart'; void main(){ WidgetsFlutterBinding.ensureInitialized(); runApp(const WanaLabApp()); }")
-
-          # app.dart + all screens - all const, no https
-          pathlib.Path("lib/app.dart").write_text(open("lib/app.dart","w").write("") or """
-          import 'package:flutter/material.dart';
-          import 'features/dashboard_screen.dart';
-          import 'features/core_screen.dart';
-          import 'features/gps_screen.dart';
-          import 'features/import_export_screen.dart';
-          import 'features/settings_screen.dart';
-          import 'features/about_screen.dart';
-          import 'features/sensors/compass_screen.dart';
-          import 'features/camera/barcode_screen.dart';
-          import 'features/camera/ocr_screen.dart';
-          import 'features/religion/qibla_screen.dart';
-          import 'features/religion/prayer_screen.dart';
-          import 'features/religion/tasbih_screen.dart';
-          import 'features/religion/zakat_screen.dart';
-          import 'features/language/translator_screen.dart';
-          import 'features/phd/citation_screen.dart';
-          import 'features/phd/statistics_screen.dart';
-          import 'features/phd/notes_screen.dart';
-          import 'features/phd/unit_converter_screen.dart';
-          import 'features/dev/developer_screen.dart';
-          import 'features/dev/pricing_screen.dart';
-          import 'features/dev/demo_screen.dart';
-          import 'features/dev/changelog_screen.dart';
-          import 'features/dev/roadmap_screen.dart';
-          import 'features/detector/emi_screen.dart';
-          import 'features/detector/detector_screen.dart';
-          class WanaLabApp extends StatefulWidget { const WanaLabApp({super.key}); @override State<WanaLabApp> createState()=>_WanaLabAppState(); }
-          class _WanaLabAppState extends State<WanaLabApp>{
-            int idx=0;
-            final titles=["Dashboard","Core Lab","GPS","Import/Export","Settings","About","Compass","Barcode","OCR","Qibla","Prayer","Tasbih","Zakat","Translator","Citation","Stats","Notes","Converter","Developer","Pricing","Demo","Changelog","Roadmap","EMI","Detector"];
-            final pages=[
-              null, const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(),
-              const CompassScreen(), const BarcodeScreen(), const OCRScreen(), const QiblaScreen(), const PrayerScreen(), const TasbihScreen(),
-              const ZakatScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const UnitConverterScreen(),
-              const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()
-            ];
-            @override
-            Widget build(BuildContext context){
-              return MaterialApp(
-                debugShowCheckedModeBanner:false, title:"WanaLab",
-                theme: ThemeData(useMaterial3:true, colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB))),
-                home: Builder(builder:(ctx){
-                  final isDash = idx==0;
-                  return Scaffold(
-                    appBar: AppBar(title: Text(isDash ? "WanaLab v3.5" : titles[idx])),
-                    body: isDash ? DashboardScreen(onNav:(i)=>setState(()=>idx=i)) : pages[idx]!,
-                    bottomNavigationBar: NavigationBar(selectedIndex: idx>4?0:idx, onDestinationSelected:(i)=>setState(()=>idx=i), destinations: const [
-                      NavigationDestination(icon: Icon(Icons.dashboard), label:"Dash"),
-                      NavigationDestination(icon: Icon(Icons.memory), label:"Core"),
-                      NavigationDestination(icon: Icon(Icons.gps_fixed), label:"GPS"),
-                      NavigationDestination(icon: Icon(Icons.import_export), label:"IO"),
-                      NavigationDestination(icon: Icon(Icons.settings), label:"Set"),
-                    ]),
-                  );
-                }),
-              );
-            }
           }
           """)
 
-          # Create all 24 simple screens
-          screens = [
-            "dashboard_screen.dart:DashboardScreen:Dashboard",
-            "core_screen.dart:CoreScreen:Core Lab",
-            "gps_screen.dart:GPSScreen:GPS",
-            "import_export_screen.dart:ImportExportScreen:Import Export",
-            "settings_screen.dart:SettingsScreen:Settings",
-            "about_screen.dart:AboutScreen:About",
-            "sensors/compass_screen.dart:CompassScreen:Compass",
-            "camera/barcode_screen.dart:BarcodeScreen:Barcode",
-            "camera/ocr_screen.dart:OCRScreen:OCR",
-            "religion/qibla_screen.dart:QiblaScreen:Qibla",
-            "religion/prayer_screen.dart:PrayerScreen:Prayer",
-            "religion/tasbih_screen.dart:TasbihScreen:Tasbih",
-            "religion/zakat_screen.dart:ZakatScreen:Zakat",
-            "language/translator_screen.dart:TranslatorScreen:Translator",
-            "phd/citation_screen.dart:CitationScreen:Citation",
-            "phd/statistics_screen.dart:StatisticsScreen:Statistics",
-            "phd/notes_screen.dart:NotesScreen:Notes",
-            "phd/unit_converter_screen.dart:UnitConverterScreen:Converter",
-            "dev/developer_screen.dart:DeveloperScreen:Developer",
-            "dev/pricing_screen.dart:PricingScreen:Pricing",
-            "dev/demo_screen.dart:DemoScreen:Demo",
-            "dev/changelog_screen.dart:ChangelogScreen:Changelog",
-            "dev/roadmap_screen.dart:RoadmapScreen:Roadmap",
-            "detector/emi_screen.dart:EMIScreen:EMI",
-            "detector/detector_screen.dart:DetectorScreen:Detector",
-          ]
-          for item in screens:
-            if item.startswith("dashboard"):
-              continue
-            rel, cls, txt = item.split(":")
-            mk(f"lib/features/{rel}", cls, txt)
+          write("lib/main.dart","""
+          import 'package:flutter/material.dart'; import 'app.dart';
+          void main(){ WidgetsFlutterBinding.ensureInitialized(); runApp(const WanaLabApp()); }
+          """)
 
-          # dashboard special
-          pathlib.Path("lib/features/dashboard_screen.dart").write_text("""
+          # app.dart, dashboard, and other 23 screens - merged here
+          # I use a loop to avoid the 'https:' bug
+          screens = {
+            "lib/features/dashboard_screen.dart": "DashboardScreen",
+            "lib/features/core_screen.dart": "CoreScreen",
+            "lib/features/gps_screen.dart": "GPSScreen",
+            "lib/features/import_export_screen.dart": "ImportExportScreen",
+            "lib/features/settings_screen.dart": "SettingsScreen",
+            "lib/features/about_screen.dart": "AboutScreen",
+            "lib/features/sensors/compass_screen.dart": "CompassScreen",
+            "lib/features/camera/barcode_screen.dart": "BarcodeScreen",
+            "lib/features/camera/ocr_screen.dart": "OCRScreen",
+            "lib/features/religion/qibla_screen.dart": "QiblaScreen",
+            "lib/features/religion/prayer_screen.dart": "PrayerScreen",
+            "lib/features/religion/tasbih_screen.dart": "TasbihScreen",
+            "lib/features/religion/zakat_screen.dart": "ZakatScreen",
+            "lib/features/language/translator_screen.dart": "TranslatorScreen",
+            "lib/features/phd/citation_screen.dart": "CitationScreen",
+            "lib/features/phd/statistics_screen.dart": "StatisticsScreen",
+            "lib/features/phd/notes_screen.dart": "NotesScreen",
+            "lib/features/phd/unit_converter_screen.dart": "UnitConverterScreen",
+            "lib/features/dev/developer_screen.dart": "DeveloperScreen",
+            "lib/features/dev/pricing_screen.dart": "PricingScreen",
+            "lib/features/dev/demo_screen.dart": "DemoScreen",
+            "lib/features/dev/changelog_screen.dart": "ChangelogScreen",
+            "lib/features/dev/roadmap_screen.dart": "RoadmapScreen",
+            "lib/features/detector/emi_screen.dart": "EMIScreen",
+            "lib/features/detector/detector_screen.dart": "DetectorScreen",
+          }
+          for path, cls in screens.items():
+              if "Dashboard" in cls:
+                  write(path, f"""
+                  import 'package:flutter/material.dart';
+                  class {cls} extends StatelessWidget {{
+                    final Function(int) onNav; const {cls}({{super.key, required this.onNav}});
+                    @override Widget build(BuildContext c) => ListView(padding: EdgeInsets.all(16), children: [ FilledButton(onPressed: ()=>onNav(1), child: Text("Go Core")) ]);
+                  }}
+                  """)
+              else:
+                  write(path, f"""
+                  import 'package:flutter/material.dart';
+                  class {cls} extends StatelessWidget {{
+                    const {cls}({{super.key}});
+                    @override Widget build(BuildContext c) => Center(child: Text("{cls} - Local only"));
+                  }}
+                  """)
+
+          write("lib/app.dart","""
           import 'package:flutter/material.dart';
-          class DashboardScreen extends StatelessWidget {
-            final
+          import 'features/dashboard_screen.dart'; import 'features/core_screen.dart'; import 'features/gps_screen.dart';
+          import 'features/import_export_screen.dart'; import 'features/settings_screen.dart'; import 'features/about_screen.dart';
+          import 'features/sensors/compass_screen.dart'; import 'features/camera/barcode_screen.dart'; import 'features/camera/ocr_screen.dart';
+          import 'features/religion/qibla_screen.dart'; import 'features/religion/prayer_screen.dart'; import 'features/religion/tasbih_screen.dart';
+          import 'features/religion/zakat_screen.dart'; import 'features/language/translator_screen.dart'; import 'features/phd/citation_screen.dart';
+          import 'features/phd/statistics_screen.dart'; import 'features/phd/notes_screen.dart'; import 'features/phd/unit_converter_screen.dart';
+          import 'features/dev/developer_screen.dart'; import 'features/dev/pricing_screen.dart'; import 'features/dev/demo_screen.dart';
+          import 'features/dev/changelog_screen.dart'; import 'features/dev/roadmap_screen.dart'; import 'features/detector/emi_screen.dart';
+          import 'features/detector/detector_screen.dart';
+          class WanaLabApp extends StatefulWidget { const WanaLabApp({super.key}); @override State<WanaLabApp> createState()=> _WanaLabAppState(); }
+          class _WanaLabAppState extends State<WanaLabApp>{
+            int idx=0;
+            final pages=[null, const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(), const CompassScreen(), const BarcodeScreen(), const OCRScreen(), const QiblaScreen(), const PrayerScreen(), const TasbihScreen(), const ZakatScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const UnitConverterScreen(), const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()];
+            @override Widget build(BuildContext c){ return MaterialApp
