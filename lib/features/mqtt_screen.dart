@@ -1,5 +1,16 @@
+
 import 'package:flutter/material.dart';
 class MqttScreen extends StatelessWidget {
   const MqttScreen({super.key});
-  @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text('mqtt')), body: Center(child: Text('mqtt restored')));
+  @override Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Mqtt'), backgroundColor: Color(0xFF2563EB), foregroundColor: Colors.white),
+      body: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.widgets, size: 80, color: Color(0xFF2563EB)),
+        SizedBox(height: 20),
+        Text('Mqtt', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text('Ready - logic will be added later', style: TextStyle(color: Colors.grey)),
+      ])),
+    );
+  }
 }
