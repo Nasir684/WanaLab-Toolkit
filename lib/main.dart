@@ -15,7 +15,6 @@ Future<void> main() async {
     debugPrint("Ads initialized");
   } catch (e) {
     debugPrint("Ads init failed - will retry later: $e");
-    // Don't crash app if ads fail - important for Wana users
   }
 
   runApp(const WanaLabApp());
