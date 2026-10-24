@@ -4,7 +4,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Safe download - skip long files
+      - name: Safe download
         run: |
           python3 - << 'PY'
           import tarfile, urllib.request, os
@@ -21,28 +21,15 @@ jobs:
                   if m.isfile():
                       f = tar.extractfile(m)
                       if f: open(inner, "wb").write(f.read())
-          print("Extract OK")
           PY
 
-      - name: Fix geolocator compileSdk bug
+      - name: Create local.properties
         run: |
-          # 1. Create local.properties that geolocator needs
           echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
-          echo "flutter.minSdkVersion=21" >> android/local.properties
-          echo "flutter.targetSdkVersion=34" >> android/local.properties
-          echo "flutter.compileSdkVersion=34" >> android/local.properties
           cat android/local.properties
-
-          # 2. Force compileSdk 34 in app build.gradle
-          sed -i "s/flutter.compileSdkVersion/34/g" android/app/build.gradle || true
-          sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g" android/app/build.gradle || true
-          sed -i "s/compileSdk flutter.compileSdkVersion/compileSdk 34/g" android/app/build.gradle || true
-
-          # 3. Add namespace if missing
           if ! grep -q "namespace" android/app/build.gradle; then
             sed -i "/^android {/a \    namespace 'com.example.wana_lab_toolkit'" android/app/build.gradle
           fi
-          cat android/app/build.gradle | head -40
 
       - uses: actions/setup-java@v4
         with:
@@ -55,6 +42,26 @@ jobs:
           channel: 'stable'
 
       - run: flutter pub get
+
+      - name: Patch geolocator_android 4.6.2 bug
+        run: |
+          GEO_FILE=$(find ~/.pub-cache -path "*geolocator_android-*/android/build.gradle" | head -1)
+          echo "Found: $GEO_FILE"
+          cat "$GEO_FILE" | head -60
+          # Replace flutter.* properties with hardcoded values
+          sed -i "s/flutter.compileSdkVersion/34/g" "$GEO_FILE"
+          sed -i "s/flutter.minSdkVersion/21/g" "$GEO_FILE"
+          sed -i "s/flutter.targetSdkVersion/34/g" "$GEO_FILE"
+          sed -i "s/flutter.ndkVersion/\"27.0.120\"/g" "$GEO_FILE"
+          sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g" "$GEO_FILE"
+          sed -i "s/compileSdk flutter.compileSdkVersion/compileSdk 34/g" "$GEO_FILE"
+          # Also add namespace if missing
+          if ! grep -q "namespace" "$GEO_FILE"; then
+            sed -i "/^android {/a \    namespace 'com.baseflow.geolocator_android'" "$GEO_FILE"
+          fi
+          echo "--- PATCHED ---"
+          cat "$GEO_FILE" | head -60
+
       - run: flutter clean
       - run: flutter build apk --release --no-tree-shake-icons
 
