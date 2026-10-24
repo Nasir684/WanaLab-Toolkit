@@ -4,12 +4,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Enable long paths
-        run: git config --global core.longpaths true
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          sparse-checkout: |
+            lib
+            assets
+            android
+            pubspec.yaml
+          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-java@v4
         with:
