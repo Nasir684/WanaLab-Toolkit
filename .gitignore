@@ -1,0 +1,8 @@
+   build/
+   .dart_tool/
+   .pub-cache/
+   doc/
+   .doc/
+   android/app/build/
+   android/.gradle/
+   *.lock
