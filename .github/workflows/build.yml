@@ -13,6 +13,7 @@ jobs:
         run: |
           rm -rf android lib test pubspec.yaml pubspec.lock
           flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
+          rm -rf test
           mkdir -p lib/services lib/features
           
           cat > lib/services/storage_service.dart << 'DART'
@@ -73,7 +74,6 @@ jobs:
 
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings
-          ls -la lib/features/
 
       - name: Build APK
         run: flutter build apk --release
