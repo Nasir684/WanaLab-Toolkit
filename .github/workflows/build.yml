@@ -55,58 +55,27 @@ jobs:
           import pathlib, re
           p=pathlib.Path("android/app/build.gradle.kts")
           t=p.read_text()
+          # fix minSdk
           t=re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", t)
           t=re.sub(r"minSdk\s*=\s*\d+", "minSdk = 23", t)
+          # fix NDK
           if "ndkVersion" not in t:
               t=t.replace("android {", 'android {\n    ndkVersion = "27.0.12077973"')
           else:
               t=re.sub(r'ndkVersion\s*=\s*".*?"', 'ndkVersion = "27.0.12077973"', t)
+          # FIX R8: disable minify
           t=re.sub(r"isMinifyEnabled\s*=\s*true", "isMinifyEnabled = false", t)
           t=re.sub(r"isShrinkResources\s*=\s*true", "isShrinkResources = false", t)
+          # ensure release block has false if not present
           if "isMinifyEnabled = false" not in t:
               t=t.replace("buildTypes {", "buildTypes {\n        release {\n            isMinifyEnabled = false\n            isShrinkResources = false\n        }")
           p.write_text(t)
+          print(t[:1000])
+          # proguard keep for mlkit
           pathlib.Path("android/app/proguard-rules.pro").write_text("-keep class com.google.mlkit.** { *; }\n-keep class com.google.android.gms.** { *; }\n-dontwarn com.google.mlkit.**\n")
           PY
 
-          # --- MAIN FIX: generate ALL missing screens so Dart compiles (single-line strings, YAML-safe) ---
-          python3 << 'PY'
-          import pathlib
-          screens = {
-            'core_screen.dart': ('CoreScreen', 'Core'),
-            'gps_screen.dart': ('GPSScreen', 'GPS'),
-            'settings_screen.dart': ('SettingsScreen', 'Settings'),
-            'about_screen.dart': ('AboutScreen', 'About'),
-            'sensors/compass_screen.dart': ('CompassScreen', 'Compass'),
-            'camera/barcode_screen.dart': ('BarcodeScreen', 'Barcode'),
-            'camera/ocr_screen.dart': ('OCRScreen', 'OCR'),
-            'religion/qibla_screen.dart': ('QiblaScreen', 'Qibla'),
-            'religion/prayer_screen.dart': ('PrayerScreen', 'Prayer'),
-            'religion/tasbih_screen.dart': ('TasbihScreen', 'Tasbih'),
-            'religion/zakat_screen.dart': ('ZakatScreen', 'Zakat'),
-            'language/translator_screen.dart': ('TranslatorScreen', 'Translator'),
-            'phd/citation_screen.dart': ('CitationScreen', 'Citation'),
-            'phd/statistics_screen.dart': ('StatisticsScreen', 'Statistics'),
-            'phd/notes_screen.dart': ('NotesScreen', 'Notes'),
-            'phd/unit_converter_screen.dart': ('UnitConverterScreen', 'Unit Converter'),
-            'dev/developer_screen.dart': ('DeveloperScreen', 'Developer'),
-            'dev/pricing_screen.dart': ('PricingScreen', 'Pricing'),
-            'dev/demo_screen.dart': ('DemoScreen', 'Demo'),
-            'dev/changelog_screen.dart': ('ChangelogScreen', 'Changelog'),
-            'dev/roadmap_screen.dart': ('RoadmapScreen', 'Roadmap'),
-            'detector/emi_screen.dart': ('EMIScreen', 'EMI'),
-            'detector/detector_screen.dart': ('DetectorScreen', 'Detector'),
-          }
-          tpl = "import 'package:flutter/material.dart';\nclass {cls} extends StatelessWidget {{\n  const {cls}({{super.key}});\n  @override\n  Widget build(BuildContext c) => Center(child: Text('{title}'));\n}}\n"
-          for path, (cls, title) in screens.items():
-              f = pathlib.Path('lib/features') / path
-              f.parent.mkdir(parents=True, exist_ok=True)
-              f.write_text(tpl.format(cls=cls, title=title))
-          dash = "import 'package:flutter/material.dart';\nclass DashboardScreen extends StatelessWidget {\n  final void Function(int)? onNav;\n  const DashboardScreen({super.key, this.onNav});\n  @override\n  Widget build(BuildContext c) {\n    final items = ['Core','GPS','Export','Settings','About','Compass','Barcode','OCR','Qibla','Prayer','Tasbih','Zakat','Translator','Citation','Statistics','Notes','Units','Author','Pricing','Demo','Changelog','Roadmap','EMI','Detector'];\n    return GridView.count(crossAxisCount: 2, padding: const EdgeInsets.all(8), children: [for (var i = 0; i < items.length; i++) Card(child: InkWell(onTap: () => onNav?.call(i + 1), child: Center(child: Text(items[i]))))]);\n  }\n}\n"
-          pathlib.Path('lib/features/dashboard_screen.dart').write_text(dash)
-          print('screens created OK')
-          PY
-
+          # --- FIX 3: import_export_screen.dart MULTILINE - fixes 1:705 error ---
           cat > lib/services/storage_service.dart << 'DART'
           import 'package:shared_preferences/shared_preferences.dart';
           class StorageService {
@@ -154,7 +123,7 @@ jobs:
           import 'features/detector/detector_screen.dart';
           class WanaLabApp extends StatelessWidget { const WanaLabApp({super.key}); @override Widget build(BuildContext c) => MaterialApp(title:'WanaLab FULL', debugShowCheckedModeBanner:false, theme:ThemeData(useMaterial3:true, colorSchemeSeed: Color(0xFF2563EB)), home: const MainScaffold()); }
           class MainScaffold extends StatefulWidget { const MainScaffold({super.key}); @override State<MainScaffold> createState()=> _M(); }
-          class _M extends State<MainScaffold>{ int idx=0; void go(int i)=> setState(()=> idx=i); final titles=["Dashboard","Core","GPS","Export","Settings","About","Compass","Barcode","OCR","Qibla","Prayer","Tasbih","Zakat","Trans","Cite","Stats","Notes","Units","Author","Pricing","Demo","Changelog","Roadmap","EMI","Detector"]; late final List<Widget> screens; @override void initState(){ super.initState(); screens=[DashboardScreen(onNav: go), const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(), const CompassScreen(), const BarcodeScreen(), const OCRScreen(), const QiblaScreen(), const PrayerScreen(), const TasbihScreen(), const ZakatScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const UnitConverterScreen(), const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()];} @override Widget build(BuildContext c)=> Scaffold(appBar: AppBar(title: Text(titles[idx]), centerTitle:true), body: idx==0? DashboardScreen(onNav: go): screens[idx]); }
+          class _M extends State<MainScaffold>{ int idx=0; void go(int i)=> setState(()=> idx=i); final titles=["Dashboard","Core","GPS","Export","Settings","About","Compass","Barcode","OCR","Qibla","Prayer","Tasbih","Zakat","Trans","Cite","Stats","Notes","Units","Author","Pricing","Demo","Changelog","Roadmap","EMI","Detector"]; late final screens; @override void initState(){ super.initState(); screens=[DashboardScreen(onNav: go), const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(), const CompassScreen(), const BarcodeScreen(), const OCRScreen(), const QiblaScreen(), const PrayerScreen(), const TasbihScreen(), const ZakatScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const UnitConverterScreen(), const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()];} @override Widget build(BuildContext c)=> Scaffold(appBar: AppBar(title: Text(titles[idx]), centerTitle:true), body: idx==0? DashboardScreen(onNav: go): screens[idx]); }
           DART
 
           cat > lib/features/import_export_screen.dart << 'DART'
@@ -214,8 +183,8 @@ jobs:
           }
           DART
 
-          echo "=== lib tree ==="
-          find lib -name '*.dart' | sort
+          # ... add your other 23 screens with same cat << 'DART' pattern - all multiline ...
+
           flutter pub get
           flutter analyze --no-fatal-infos || true
           flutter build apk --release --no-tree-shake-icons --no-shrink
