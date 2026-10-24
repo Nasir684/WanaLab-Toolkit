@@ -6,12 +6,16 @@ jobs:
     steps:
       - name: Manual clone - skip long files
         run: |
-          git clone --depth 1 --no-checkout https://github.com/${{ github.repository }}.git .
-          git config core.protectNTFS false
+          rm -rf ./* ./.* 2>/dev/null || true
+          git clone --depth 1 --no-checkout https://github.com/Nasir684/WanaLab-Toolkit.git .
           git config core.longpaths true
-          git sparse-checkout init --cone
+          git config core.protectNTFS false
+          git config core.symlinks false
+          # Non-cone mode = we control exactly what is checked out
+          git sparse-checkout init --no-cone
           git sparse-checkout set lib android pubspec.yaml pubspec.lock
-          git checkout
+          git checkout main -- lib android pubspec.yaml pubspec.lock
+          ls -la
 
       - uses: actions/setup-java@v4
         with:
