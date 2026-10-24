@@ -70,7 +70,7 @@ jobs:
           pathlib.Path("android/app/proguard-rules.pro").write_text("-keep class com.google.mlkit.** { *; }\n-keep class com.google.android.gms.** { *; }\n-dontwarn com.google.mlkit.**\n")
           PY
 
-          # --- THE MAIN FIX: create ALL missing screens so Dart compiles ---
+          # --- MAIN FIX: generate ALL missing screens so Dart compiles (single-line strings, YAML-safe) ---
           python3 << 'PY'
           import pathlib
           screens = {
@@ -98,32 +98,13 @@ jobs:
             'detector/emi_screen.dart': ('EMIScreen', 'EMI'),
             'detector/detector_screen.dart': ('DetectorScreen', 'Detector'),
           }
-          tpl = """import 'package:flutter/material.dart';
-class {cls} extends StatelessWidget {{
-  const {cls}({{super.key}});
-  @override
-  Widget build(BuildContext c) => Center(child: Text('{title}'));
-}}
-"""
-          for path,(cls,title) in screens.items():
-              f = pathlib.Path('lib/features')/path
+          tpl = "import 'package:flutter/material.dart';\nclass {cls} extends StatelessWidget {{\n  const {cls}({{super.key}});\n  @override\n  Widget build(BuildContext c) => Center(child: Text('{title}'));\n}}\n"
+          for path, (cls, title) in screens.items():
+              f = pathlib.Path('lib/features') / path
               f.parent.mkdir(parents=True, exist_ok=True)
               f.write_text(tpl.format(cls=cls, title=title))
-          # Dashboard with working navigation
-          pathlib.Path('lib/features/dashboard_screen.dart').write_text("""import 'package:flutter/material.dart';
-class DashboardScreen extends StatelessWidget {
-  final void Function(int)? onNav;
-  const DashboardScreen({super.key, this.onNav});
-  @override
-  Widget build(BuildContext c) {
-    final items = ['Core','GPS','Export','Settings','About','Compass','Barcode','OCR','Qibla','Prayer','Tasbih','Zakat','Translator','Citation','Statistics','Notes','Units','Author','Pricing','Demo','Changelog','Roadmap','EMI','Detector'];
-    return GridView.count(crossAxisCount: 2, padding: const EdgeInsets.all(8), children: [
-      for (var i = 0; i < items.length; i++)
-        Card(child: InkWell(onTap: () => onNav?.call(i + 1), child: Center(child: Text(items[i]))))
-    ]);
-  }
-}
-""")
+          dash = "import 'package:flutter/material.dart';\nclass DashboardScreen extends StatelessWidget {\n  final void Function(int)? onNav;\n  const DashboardScreen({super.key, this.onNav});\n  @override\n  Widget build(BuildContext c) {\n    final items = ['Core','GPS','Export','Settings','About','Compass','Barcode','OCR','Qibla','Prayer','Tasbih','Zakat','Translator','Citation','Statistics','Notes','Units','Author','Pricing','Demo','Changelog','Roadmap','EMI','Detector'];\n    return GridView.count(crossAxisCount: 2, padding: const EdgeInsets.all(8), children: [for (var i = 0; i < items.length; i++) Card(child: InkWell(onTap: () => onNav?.call(i + 1), child: Center(child: Text(items[i]))))]);\n  }\n}\n"
+          pathlib.Path('lib/features/dashboard_screen.dart').write_text(dash)
           print('screens created OK')
           PY
 
