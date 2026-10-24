@@ -8,11 +8,13 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-      - name: Build
+
+      - name: Download files (skip 1 broken file)
         run: |
           python3 - << 'PY'
           import tarfile, urllib.request, os
@@ -22,19 +24,36 @@ jobs:
             for m in tar.getmembers():
               if "/" not in m.name: continue
               inner=m.name.split("/",1)[1]
-              if "\n" in inner or '"' in inner or "File name too long" in inner or "content" in inner or len(inner)>100: 
-                continue
+              if "\n" in inner or '"' in inner or "content" in inner or len(inner)>120: continue
               if not (inner.startswith("lib/") or inner=="pubspec.yaml"): continue
-              if m.isfile():
-                d=os.path.dirname(inner)
-                if d: os.makedirs(d,exist_ok=True)
-                try: open(inner,"wb").write(tar.extractfile(m).read())
-                except: pass
+              if not m.isfile(): continue
+              d=os.path.dirname(inner)
+              if d: os.makedirs(d,exist_ok=True)
+              try:
+                open(inner,"wb").write(tar.extractfile(m).read())
+                print(f"OK: {inner}")
+              except: pass
           PY
+
+      - name: Fix pubspec.yaml - update geolocator
+        run: |
+          echo "--- BEFORE ---"
+          cat pubspec.yaml
+          # Update old geolocator to new version that has compileSdkVersion
+          sed -i 's/geolocator:.*/geolocator: ^12.0.0/' pubspec.yaml
+          sed -i 's/url_launcher:.*/url_launcher: ^6.2.5/' pubspec.yaml
+          sed -i 's/geocoding:.*/geocoding: ^3.0.0/' pubspec.yaml || true
+          echo "--- AFTER ---"
+          cat pubspec.yaml
+          # Fresh android folder
           rm -rf android
-          flutter create --project-name wana_lab_toolkit --org com.example --platforms=android .
+          flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
+          flutter pub upgrade
           flutter pub get
-          flutter build apk --release --no-tree-shake-icons
+
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
+
       - uses: actions/upload-artifact@v4
         with:
           name: WanaLab-APK
