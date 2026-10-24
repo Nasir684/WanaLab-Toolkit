@@ -4,15 +4,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          sparse-checkout: |
-            lib
-            assets
-            android
-            pubspec.yaml
-          sparse-checkout-cone-mode: false
+      - name: Manual clone - skip long files
+        run: |
+          git clone --depth 1 --no-checkout https://github.com/${{ github.repository }}.git .
+          git config core.protectNTFS false
+          git config core.longpaths true
+          git sparse-checkout init --cone
+          git sparse-checkout set lib android pubspec.yaml pubspec.lock
+          git checkout
 
       - uses: actions/setup-java@v4
         with:
@@ -25,7 +24,7 @@ jobs:
           channel: 'stable'
 
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: flutter build apk --release --no-tree-shake-icons
 
       - uses: actions/upload-artifact@v4
         with:
