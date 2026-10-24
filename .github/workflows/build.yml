@@ -4,32 +4,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Safe download
-        run: |
-          python3 - << 'PY'
-          import tarfile, urllib.request, os
-          url = "https://github.com/Nasir684/WanaLab-Toolkit/archive/main.tar.gz"
-          urllib.request.urlretrieve(url, "repo.tar.gz")
-          with tarfile.open("repo.tar.gz", "r:gz") as tar:
-              for m in tar.getmembers():
-                  if "/" not in m.name: continue
-                  inner = m.name.split("/",1)[1]
-                  if not (inner.startswith("lib/") or inner.startswith("android/") or inner == "pubspec.yaml"): continue
-                  if len(inner) > 120: continue
-                  d = os.path.dirname(inner)
-                  if d: os.makedirs(d, exist_ok=True)
-                  if m.isfile():
-                      f = tar.extractfile(m)
-                      if f: open(inner, "wb").write(f.read())
-          PY
-
-      - name: Create local.properties + namespace
-        run: |
-          echo "sdk.dir=/usr/local/lib/android/sdk" > android/local.properties
-          if ! grep -q "namespace" android/app/build.gradle; then
-            sed -i "/^android {/a \    namespace 'com.example.wana_lab_toolkit'" android/app/build.gradle
-          fi
-
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -40,26 +14,35 @@ jobs:
           flutter-version: '3.24.5'
           channel: 'stable'
 
-      - run: flutter pub get
-
-      - name: PATCH ALL plugins with flutter. bug
+      - name: Download and rebuild Android folder
         run: |
-          echo "Searching for broken build.gradle files..."
-          find $HOME -type f -path "*geolocator_android*/android/build.gradle" -o -path "*geocoding_android*/android/build.gradle" -o -path "*permission_handler_android*/android/build.gradle" | head -20
-          
-          # Patch EVERY build.gradle in pub cache that uses flutter.*
-          find $HOME -type f -name "build.gradle" | xargs grep -l "flutter\." 2>/dev/null | while read FILE; do
-            echo "Patching $FILE"
-            sed -i "s/flutter.compileSdkVersion/34/g" "$FILE"
-            sed -i "s/flutter.minSdkVersion/21/g" "$FILE"
-            sed -i "s/flutter.targetSdkVersion/34/g" "$FILE"
-            sed -i "s/flutter.ndkVersion/\"27.0.120\"/g" "$FILE"
-            sed -i "s/def flutterVersionCode.*/def flutterVersionCode = '1'/g" "$FILE" || true
-            sed -i "s/def flutterVersionName.*/def flutterVersionName = '1.0'/g" "$FILE" || true
-          done
-          echo "All patched"
+          python3 - << 'PY'
+          import tarfile, urllib.request, os, shutil
+          url = "https://github.com/Nasir684/WanaLab-Toolkit/archive/main.tar.gz"
+          urllib.request.urlretrieve(url, "repo.tar.gz")
+          os.makedirs("/tmp/save", exist_ok=True)
+          with tarfile.open("repo.tar.gz", "r:gz") as tar:
+              for m in tar.getmembers():
+                  if "/" not in m.name: continue
+                  inner = m.name.split("/",1)[1]
+                  if inner.startswith("lib/") or inner == "pubspec.yaml":
+                      if m.isfile():
+                          f = tar.extractfile(m)
+                          out = f"/tmp/save/{inner}"
+                          os.makedirs(os.path.dirname(out), exist_ok=True)
+                          open(out, "wb").write(f.read())
+          PY
+          # create fresh Flutter project (fresh android/ folder)
+          flutter create --project-name wana_lab_toolkit --org com.example --platforms=android /tmp/newapp
+          # restore your code
+          rm -rf lib pubspec.yaml
+          cp -r /tmp/save/lib .
+          cp /tmp/save/pubspec.yaml .
+          cp -r /tmp/newapp/android .
+          cp /tmp/newapp/analysis_options.yaml . || true
+          ls -R
 
-      - run: flutter clean
+      - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons
 
       - uses: actions/upload-artifact@v4
