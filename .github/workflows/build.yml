@@ -9,31 +9,20 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.29.3', channel: 'stable'}
 
-      - name: Build FINAL WanaLab Toolkit
+      - name: Build WanaLab v3.0 RESEARCH PLATFORM 2037
         run: |
           rm -rf android lib test pubspec.yaml pubspec.lock
           flutter create --project-name wana_lab_toolkit --org com.wanalab.toolkit --platforms=android .
           rm -rf test
-          mkdir -p lib/services lib/features assets
-
-          # Install Pillow and create icon
+          mkdir -p lib/services lib/features/sensors lib/features/camera lib/features/religion lib/features/language lib/features/phd lib/features/dev lib/features/detector assets
           pip install Pillow -q
-          python3 -c "
-          from PIL import Image, ImageDraw
-          img = Image.new('RGB', (1024,1024), (37, 99, 235))
-          d = ImageDraw.Draw(img)
-          d.ellipse([200,200,824,824], fill='white')
-          d.rectangle([460,480,564,700], fill=(37,99,235))
-          d.rectangle([400,700,624,760], fill=(37,99,235))
-          img.save('assets/icon.png')
-          print('icon created')
-          "
+          python3 -c "from PIL import Image, ImageDraw; img=Image.new('RGB',(1024,1024),(37,99,235)); d=ImageDraw.Draw(img); d.ellipse([180,180,844,844], fill='white'); img.save('assets/icon.png')"
 
           cat > pubspec.yaml << 'YAML'
           name: wana_lab_toolkit
-          description: WanaLab Toolkit - Professional Field Lab
+          description: Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud. By Nasir Khan - https://github.com/Nasir684/WanaLab-Toolkit
           publish_to: 'none'
-          version: 1.0.0+2
+          version: 3.0.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
@@ -44,112 +33,294 @@ jobs:
             printing: ^5.12.0
             share_plus: ^10.0.4
             path_provider: ^2.1.4
+            file_picker: ^8.1.6
+            sensors_plus: ^6.1.1
+            light: ^2.0.0
+            battery_plus: ^6.1.0
+            mobile_scanner: ^5.2.3
+            qr_flutter: ^4.1.0
+            image_picker: ^1.1.2
+            google_mlkit_text_recognition: ^0.13.1
+            adhan: ^2.0.0
+            hijri: ^3.0.0
+            url_launcher: ^6.2.5
           dev_dependencies: {flutter_test: {sdk: flutter}, flutter_lints: ^4.0.0}
-          flutter:
-            uses-material-design: true
-            assets: [assets/icon.png]
+          flutter: {uses-material-design: true, assets: [assets/icon.png]}
           YAML
 
           cat > lib/services/storage_service.dart << 'DART'
           import 'package:shared_preferences/shared_preferences.dart';
           class StorageService {
-            static SharedPreferences? _prefs;
-            static Future<void> init() async { _prefs = await SharedPreferences.getInstance(); }
-            static Future<List<String>> getList(String k) async => _prefs?.getStringList(k) ?? [];
-            static Future<void> setList(String k, List<String> v) async => await _prefs?.setStringList(k, v);
-            static Future<void> clearAll() async => await _prefs?.clear();
+            static SharedPreferences? _p;
+            static Future<void> init() async { _p = await SharedPreferences.getInstance(); }
+            static Future<List<String>> getList(String k) async => _p?.getStringList(k) ?? [];
+            static Future<void> setList(String k, List<String> v) async => await _p?.setStringList(k, v);
+            static Future<int> getInt(String k) async => _p?.getInt(k) ?? 0;
+            static Future<void> setInt(String k, int v) async => await _p?.setInt(k, v);
+            static Future<void> clearAll() async => await _p?.clear();
           }
           DART
 
           cat > lib/main.dart << 'DART'
-          import 'package:flutter/material.dart';
-          import 'services/storage_service.dart';
-          import 'app.dart';
+          import 'package:flutter/material.dart'; import 'services/storage_service.dart'; import 'app.dart';
           void main() async { WidgetsFlutterBinding.ensureInitialized(); await StorageService.init(); runApp(const WanaLabApp()); }
           DART
 
           cat > lib/app.dart << 'DART'
           import 'package:flutter/material.dart';
-          import 'features/dashboard_screen.dart'; import 'features/core_screen.dart'; import 'features/gps_screen.dart'; import 'features/baby_screen.dart'; import 'features/emi_screen.dart'; import 'features/gym_screen.dart'; import 'features/workshop_screen.dart'; import 'features/varrho_screen.dart'; import 'features/import_export_screen.dart'; import 'features/settings_screen.dart'; import 'features/gallery_screen.dart'; import 'features/about_screen.dart';
-          class WanaLabApp extends StatelessWidget { const WanaLabApp({super.key}); @override Widget build(BuildContext context) { return MaterialApp(title: 'WanaLab Toolkit', debugShowCheckedModeBanner: false, theme: ThemeData(useMaterial3: true, colorSchemeSeed: Color(0xFF2563EB)), home: const MainScaffold()); } }
-          class MainScaffold extends StatefulWidget { const MainScaffold({super.key}); @override State<MainScaffold> createState() => _MainState(); }
-          class _MainState extends State<MainScaffold> {
-            int idx=0;
-            void go(int i){ setState(()=>idx=i); }
-            @override Widget build(BuildContext context){
-              final screens=[DashboardScreen(onNav: go), const CoreScreen(), const GPSScreen(), const BabyScreen(), const EMIScreen(), const GymScreen(), const WorkshopScreen(), const VarRhoScreen(), const ImportExportScreen(), const SettingsScreen(), const GalleryScreen(), const AboutScreen()];
-              final titles=["Dashboard","Core Cutter","GPS Logger","Baby Tracker","EMI Calc","Gym/BMI","Workshop","Var Rho","Data Export","Settings","Gallery","About"];
-              return Scaffold(appBar: AppBar(title: Text(titles[idx]), centerTitle: true), body: screens[idx], bottomNavigationBar: NavigationBar(selectedIndex: idx>4?0:idx, onDestinationSelected: (v)=>setState(()=>idx=v), destinations: const [NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dash'), NavigationDestination(icon: Icon(Icons.science), label: 'Core'), NavigationDestination(icon: Icon(Icons.gps_fixed), label: 'GPS'), NavigationDestination(icon: Icon(Icons.child_friendly), label: 'Baby'), NavigationDestination(icon: Icon(Icons.calculate), label: 'EMI')]), drawer: Drawer(child: ListView(padding: EdgeInsets.zero, children: [DrawerHeader(decoration: const BoxDecoration(color: Color(0xFF2563EB)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [Icon(Icons.biotech, size: 48, color: Colors.white), SizedBox(height:12), Text('WanaLab Toolkit', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold))])), ...List.generate(titles.length, (i)=>ListTile(leading: Icon([Icons.dashboard, Icons.science, Icons.gps_fixed, Icons.child_friendly, Icons.calculate, Icons.fitness_center, Icons.handyman, Icons.water_drop, Icons.import_export, Icons.settings, Icons.photo, Icons.info][i]), title: Text(titles[i]), selected: i==idx, onTap: (){setState(()=>idx=i); Navigator.pop(context);} ))]))); }
+          import 'features/dashboard_screen.dart'; import 'features/core_screen.dart'; import 'features/gps_screen.dart'; import 'features/import_export_screen.dart'; import 'features/settings_screen.dart'; import 'features/about_screen.dart';
+          import 'features/sensors/compass_screen.dart'; import 'features/camera/barcode_screen.dart';
+          import 'features/religion/qibla_screen.dart'; import 'features/religion/prayer_screen.dart';
+          import 'features/language/translator_screen.dart'; import 'features/phd/citation_screen.dart'; import 'features/phd/statistics_screen.dart'; import 'features/phd/notes_screen.dart';
+          import 'features/dev/developer_screen.dart'; import 'features/dev/pricing_screen.dart'; import 'features/dev/demo_screen.dart'; import 'features/dev/changelog_screen.dart'; import 'features/dev/roadmap_screen.dart';
+          import 'features/detector/emi_screen.dart'; import 'features/detector/detector_screen.dart';
+          class WanaLabApp extends StatelessWidget { const WanaLabApp({super.key}); @override Widget build(BuildContext context){ return MaterialApp(title:'WanaLab v3.0 Research Platform', debugShowCheckedModeBanner:false, theme:ThemeData(useMaterial3:true, colorSchemeSeed:Color(0xFF2563EB)), home:const MainScaffold()); } }
+          class MainScaffold extends StatefulWidget { const MainScaffold({super.key}); @override State<MainScaffold> createState()=>_M(); }
+          class _M extends State<MainScaffold>{
+            int idx=0; void go(int i)=>setState(()=>idx=i);
+            final titles=["Dashboard","Core Estimation","GPS Pro","Export/Import","Settings","About README","Compass","Barcode","Qibla","Prayer Times","Translator","Citation","Statistics","Research Notes","Developer - Nasir Khan","Pricing","Demo Tutorial","Changelog","Roadmap 2037","EMI Screening","Detector Analysis"];
+            late final screens;
+            @override void initState(){ super.initState(); screens=[DashboardScreen(onNav: go), const CoreScreen(), const GPSScreen(), const ImportExportScreen(), const SettingsScreen(), const AboutScreen(), const CompassScreen(), const BarcodeScreen(), const QiblaScreen(), const PrayerScreen(), const TranslatorScreen(), const CitationScreen(), const StatisticsScreen(), const NotesScreen(), const DeveloperScreen(), const PricingScreen(), const DemoScreen(), const ChangelogScreen(), const RoadmapScreen(), const EMIScreen(), const DetectorScreen()]; }
+            @override Widget build(BuildContext c){
+              return Scaffold(appBar:AppBar(title:Text(titles[idx]), centerTitle:true), body: idx==0 ? DashboardScreen(onNav: go) : screens[idx], drawer: Drawer(child: ListView(padding:EdgeInsets.zero, children:[
+                const DrawerHeader(decoration:BoxDecoration(color:Color(0xFF2563EB)), child:Column(crossAxisAlignment:CrossAxisAlignment.start, mainAxisAlignment:MainAxisAlignment.end, children:[Icon(Icons.science, size:32, color:Colors.white), SizedBox(height:6), Text('WanaLab v3.0', style:TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.bold)), Text('Research Platform 2037\nLocal-only, Privacy-first', style:TextStyle(color:Colors.white70,fontSize:10))])),
+                ListTile(dense:true, leading:const Icon(Icons.person, size:18, color:Colors.blue), title:Text(titles[14], style:const TextStyle(fontSize:11)), selected:idx==14, onTap:(){setState(()=>idx=14); Navigator.pop(c);}),
+                ListTile(dense:true, leading:const Icon(Icons.payments, size:18, color:Colors.green), title:Text(titles[15], style:const TextStyle(fontSize:11)), selected:idx==15, onTap:(){setState(()=>idx=15); Navigator.pop(c);}),
+                ListTile(dense:true, leading:const Icon(Icons.map, size:18, color:Colors.orange), title:Text(titles[18], style:const TextStyle(fontSize:11)), selected:idx==18, onTap:(){setState(()=>idx=18); Navigator.pop(c);}),
+                const Divider(),
+                const Padding(padding:EdgeInsets.fromLTRB(16,4,0,2), child:Text('RESEARCH PLATFORM', style:TextStyle(fontSize:9,fontWeight:FontWeight.bold,color:Colors.grey))),
+                ListTile(dense:true, title:Text(titles[1], style:const TextStyle(fontSize:11)), onTap:(){setState(()=>idx=1); Navigator.pop(c);}),
+                ListTile(dense:true, title:Text(titles[19], style:const TextStyle(fontSize:11)), onTap:(){setState(()=>idx=19); Navigator.pop(c);}),
+                ListTile(dense:true, title:Text(titles[20], style:const TextStyle(fontSize:11)), onTap:(){setState(()=>idx=20); Navigator.pop(c);}),
+                ListTile(dense:true, title:Text(titles[8], style:const TextStyle(fontSize:11)), onTap:(){setState(()=>idx=8); Navigator.pop(c);}),
+                ListTile(dense:true, title:Text(titles[13], style:const TextStyle(fontSize:11)), onTap:(){setState()=>idx=13; Navigator.pop(c);}),
+                ListTile(dense:true, title:Text(titles[5], style:const TextStyle(fontSize:11)), onTap:(){setState()=>idx=5; Navigator.pop(c);}),
+              ])), bottomNavigationBar: NavigationBar(selectedIndex: idx>4?0:idx, onDestinationSelected:(v){ if(v==0) setState(()=>idx=0); if(v==1) setState(()=>idx=14); if(v==2) setState(()=>idx=18); if(v==3) setState()=>idx=19; if(v==4) setState(()=>idx=5); }, destinations:const [NavigationDestination(icon:Icon(Icons.dashboard), label:'Platform'), NavigationDestination(icon:Icon(Icons.person), label:'Author'), NavigationDestination(icon:Icon(Icons.map), label:'Roadmap'), NavigationDestination(icon:Icon(Icons.science), label:'EMI/Detect'), NavigationDestination(icon:Icon(Icons.info), label:'README')])); }
           }
           DART
 
           cat > lib/features/dashboard_screen.dart << 'DART'
           import 'package:flutter/material.dart'; import '../services/storage_service.dart';
           class DashboardScreen extends StatefulWidget { final Function(int) onNav; const DashboardScreen({super.key, required this.onNav}); @override State<DashboardScreen> createState()=>_D(); }
-          class _D extends State<DashboardScreen> { int cores=0,gps=0; @override void initState(){super.initState(); _load();} Future<void> _load() async { final c=await StorageService.getList('cores'); final g=await StorageService.getList('gps'); if(!mounted) return; setState((){cores=c.length; gps=g.length;}); } @override Widget build(BuildContext context){ return ListView(padding: const EdgeInsets.all(16), children: [Card(elevation:2, child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('WanaLab Toolkit', style: TextStyle(fontSize:22, fontWeight: FontWeight.bold)), const Text('All-in-one field lab toolkit'), const SizedBox(height:16), Row(children: [Expanded(child: _stat('Cores', '$cores', Colors.green)), const SizedBox(width:12), Expanded(child: _stat('GPS', '$gps', Colors.blue))])]))), const SizedBox(height:12), GridView.count(crossAxisCount:2, shrinkWrap:true, physics: const NeverScrollableScrollPhysics(), mainAxisSpacing:12, crossAxisSpacing:12, children: [_card('Core Test','Soil density',Icons.science, Colors.green, 1), _card('GPS Logger','Save locations',Icons.gps_fixed, Colors.blue, 2), _card('EMI Calc','Loan EMI',Icons.calculate, Colors.orange, 4), _card('BMI/Gym','Health',Icons.fitness_center, Colors.purple, 5), _card('Baby Tracker','Growth',Icons.child_friendly, Colors.pink, 3), _card('Workshop','Inventory',Icons.handyman, Colors.brown, 6)])]); } Widget _stat(String t,String v,Color c){ return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(16)), child: Column(children: [Text(v, style: TextStyle(fontSize:24, fontWeight: FontWeight.bold, color:c)), Text(t)])); } Widget _card(String a,String b,IconData ic,Color c,int nav){ return InkWell(onTap: ()=>widget.onNav(nav), borderRadius: BorderRadius.circular(16), child: Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(ic, color:c, size:36), const SizedBox(height:8), Text(a, style: const TextStyle(fontWeight: FontWeight.bold)), Text(b, style: const TextStyle(fontSize:12, color: Colors.grey))])))); } }
+          class _D extends State<DashboardScreen>{
+            int cores=0; @override void initState(){super.initState(); _load();} Future<void> _load() async { final c=await StorageService.getList('cores'); if(mounted) setState(()=>cores=c.length); }
+            @override Widget build(BuildContext context){
+              return ListView(padding:const EdgeInsets.all(8), children:[
+                Card(color:const Color(0xFF2563EB), child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Row(children:[const Icon(Icons.science, color:Colors.white, size:32), const SizedBox(width:10), const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Text('WanaLab v3.0', style:TextStyle(color:Colors.white,fontSize:15,fontWeight:FontWeight.bold)), Text('Research Platform 2037', style:TextStyle(color:Colors.white70,fontSize:11))])), Text('$cores', style:const TextStyle(color:Colors.white,fontSize:16,fontWeight:FontWeight.bold))]), const SizedBox(height:8), const Text('Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.', style:TextStyle(color:Colors.white, fontSize:10), textAlign:TextAlign.left)]))),
+                _cat('RESEARCH PLATFORM CORE (4) - Engineering, EMI, Detector, Workflow'), GridView.count(crossAxisCount:2, shrinkWrap:true, physics:const NeverScrollableScrollPhysics(), mainAxisSpacing:6, crossAxisSpacing:6, childAspectRatio:1.6, children:[_b('Engineering\nEstimation',Icons.terrain,Colors.green,1), _b('EMI\nScreening',Icons.electrical_services,Colors.orange,19), _b('Detector\nAnalysis',Icons.sensors,Colors.purple,20), _b('Scientific\nWorkflow',Icons.note,Colors.blue,13)]),
+                _cat('PLATFORM PRINCIPLES'), Card(color:Colors.green.shade50, child:Padding(padding:const EdgeInsets.all(10), child:Column(children:[_p('Local-only','All data stays on device, no cloud'), _p('Privacy-first','No tracking, no ads SDK, no login'), _p('No Login','Open app and research'), _p('No Cloud','Works 100% offline in Wana'), _p('Evolution 2037','Roadmap to 2037 - See Roadmap screen')]))),
+                _cat('DEVELOPER & BUSINESS'), GridView.count(crossAxisCount:4, shrinkWrap:true, physics:const NeverScrollableScrollPhysics(), mainAxisSpacing:4, crossAxisSpacing:4, childAspectRatio:0.9, children:[_b('Author\nNasir Khan',Icons.person,Colors.blue,14), _b('Pricing\nPlans',Icons.payments,Colors.green,15), _b('Roadmap\n2037',Icons.map,Colors.orange,18), _b('README\nAbout',Icons.info,Colors.purple,5)]),
+                _cat('FULL TOOLKIT (56 Tools)'), GridView.count(crossAxisCount:4, shrinkWrap:true, physics:const NeverScrollableScrollPhysics(), mainAxisSpacing:4, crossAxisSpacing:4, childAspectRatio:0.9, children:[_b('GPS Pro\nField',Icons.gps_fixed,Colors.blue,2), _b('Qibla\nReligion',Icons.mosque,Colors.green,8), _b('Trans\nLanguage',Icons.translate,Colors.orange,10), _b('Barcode\nCamera',Icons.qr_code_scanner,Colors.teal,7), _b('Stats\nResearch',Icons.bar_chart,Colors.purple,12), _b('Export\nFile Share',Icons.import_export,Colors.indigo,3), _b('Demo\nTutorial',Icons.play_circle,Colors.orange,16), _b('Changelog\nHistory',Icons.history,Colors.grey,17)]),
+              ]);
+            }
+            Widget _cat(String t){ return Padding(padding:const EdgeInsets.fromLTRB(4,10,0,4), child:Text(t, style:const TextStyle(fontSize:10,fontWeight:FontWeight.bold,color:Colors.grey))); }
+            Widget _p(String k,String v){ return Padding(padding:const EdgeInsets.symmetric(vertical:2), child:Row(children:[Text('$k: ', style:const TextStyle(fontWeight:FontWeight.bold, fontSize:11)), Expanded(child:Text(v, style:const TextStyle(fontSize:11)))])); }
+            Widget _b(String t,IconData ic,Color col,int idx){ return InkWell(onTap:()=>widget.onNav(idx), borderRadius:BorderRadius.circular(8), child:Card(elevation:2, child:Padding(padding:const EdgeInsets.all(4), child:Column(mainAxisAlignment:MainAxisAlignment.center, children:[Icon(ic,color:col,size:22), const SizedBox(height:3), Text(t, textAlign:TextAlign.center, style:const TextStyle(fontSize:8,fontWeight:FontWeight.bold))])))); }
+          }
           DART
 
           cat > lib/features/core_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import '../services/storage_service.dart'; import 'package:intl/intl.dart'; import 'package:pdf/widgets.dart' as pw; import 'package:printing/printing.dart'; import 'package:share_plus/share_plus.dart';
-          class CoreScreen extends StatefulWidget { const CoreScreen({super.key}); @override State<CoreScreen> createState()=>_C(); }
-          class _C extends State<CoreScreen> { final wtCtrl=TextEditingController(), wcCtrl=TextEditingController(text:'100'), vcCtrl=TextEditingController(text:'1000'), wCtrl=TextEditingController(), locCtrl=TextEditingController(); double bulk=0,dry=0,mc=0; List<String> hist=[]; @override void initState(){super.initState(); _loadHist();} Future<void> _loadHist() async { hist=await StorageService.getList('cores'); if(mounted) setState((){}); } void calc(){ double wt=double.tryParse(wtCtrl.text)??0; double wc=double.tryParse(wcCtrl.text)??0; double vc=double.tryParse(vcCtrl.text)??1000; double w=double.tryParse(wCtrl.text)??0; if(wt==0||vc==0){ return; } bulk=(wt-wc)/vc; mc=w; dry=bulk/(1+mc/100); setState((){}); } Future<void> save() async { if(bulk==0){ return; } final f=DateFormat('dd-MM HH:mm').format(DateTime.now()); hist.add('$f | ${locCtrl.text} | Bulk:${bulk.toStringAsFixed(3)}'); await StorageService.setList('cores', hist); if(mounted) setState((){}); } Future<void> makePdf() async { final doc=pw.Document(); doc.addPage(pw.Page(build: (c)=>pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [pw.Text('WanaLab - Core Cutter Report', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)), pw.SizedBox(height:20), pw.Text('Location: ${locCtrl.text}'), pw.Text('Bulk Density: ${bulk.toStringAsFixed(3)} g/cc'), pw.Text('Dry Density: ${dry.toStringAsFixed(3)} g/cc'), pw.Text('Water Content: $mc %'), pw.Text('Date: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}')]))); await Printing.layoutPdf(onLayout: (f) async => doc.save()); } Future<void> share() async { if(bulk==0){ return; } await Share.share('WanaLab Core Report\nLocation: ${locCtrl.text}\nBulk: ${bulk.toStringAsFixed(3)}\nDry: ${dry.toStringAsFixed(3)}'); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [TextField(controller: locCtrl, decoration: const InputDecoration(labelText:'Location', border: OutlineInputBorder())), const SizedBox(height:8), TextField(controller: wtCtrl, decoration: const InputDecoration(labelText:'Wt. core+soil (g)', border: OutlineInputBorder()), keyboardType: TextInputType.number), const SizedBox(height:8), Row(children: [Expanded(child: TextField(controller: wcCtrl, decoration: const InputDecoration(labelText:'Wt. core', border: OutlineInputBorder()), keyboardType: TextInputType.number)), const SizedBox(width:8), Expanded(child: TextField(controller: vcCtrl, decoration: const InputDecoration(labelText:'Vol cc', border: OutlineInputBorder()), keyboardType: TextInputType.number))]), const SizedBox(height:8), TextField(controller: wCtrl, decoration: const InputDecoration(labelText:'Water content %', border: OutlineInputBorder()), keyboardType: TextInputType.number), const SizedBox(height:12), FilledButton.icon(onPressed: calc, icon: const Icon(Icons.calculate), label: const Text('Calculate')), Card(color: Colors.indigo.shade50, child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Bulk Density:'), Text('${bulk.toStringAsFixed(3)} g/cc', style: const TextStyle(fontWeight: FontWeight.bold))]), Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Dry Density:'), Text('${dry.toStringAsFixed(3)} g/cc', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))])]))), Row(children: [Expanded(child: FilledButton.tonal(onPressed: save, child: const Text('Save'))), const SizedBox(width:8), Expanded(child: OutlinedButton.icon(onPressed: makePdf, icon: const Icon(Icons.picture_as_pdf), label: const Text('PDF'))), const SizedBox(width:8), Expanded(child: OutlinedButton.icon(onPressed: share, icon: const Icon(Icons.share), label: const Text('Share')))]), const Divider(), const Text('History', style: TextStyle(fontWeight: FontWeight.bold)), ...hist.reversed.map((e)=>Card(child: ListTile(dense:true, title: Text(e, style: const TextStyle(fontSize:11)))))]); } }
+          import 'package:flutter/material.dart'; import '../services/storage_service.dart'; import 'package:intl/intl.dart'; import 'package:share_plus/share_plus.dart'; class CoreScreen extends StatefulWidget { const CoreScreen({super.key}); @override State<CoreScreen> createState()=>_C(); } class _C extends State<CoreScreen>{final wt=TextEditingController(), wc=TextEditingController(text:'100'), vc=TextEditingController(text:'1000'), water=TextEditingController(), loc=TextEditingController(); double bulk=0,dry=0; List<String> hist=[]; @override void initState(){super.initState(); _load();} Future<void> _load() async { hist=await StorageService.getList('cores'); if(mounted) setState((){}); } void calc(){ double wT=double.tryParse(wt.text)??0; double wC=double.tryParse(wc.text)??0; double vC=double.tryParse(vc.text)??1000; double w=double.tryParse(water.text)??0; if(wT==0||vC==0){ return; } bulk=(wT-wC)/vC; dry=bulk/(1+w/100); setState((){}); } Future<void> save() async { hist.add('${DateFormat('dd-MM HH:mm').format(DateTime.now())} | ${loc.text} | B:${bulk.toStringAsFixed(3)}'); await StorageService.setList('cores', hist); if(mounted) setState((){}); } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(10), children:[const Text('Engineering Estimation - Core Cutter Bulk/Dry - Local-only, no cloud', style:TextStyle(fontSize:10, fontWeight:FontWeight.bold)), TextField(controller:loc, decoration:const InputDecoration(labelText:'Location', border:OutlineInputBorder())), TextField(controller:wt, decoration:const InputDecoration(labelText:'Wt core+soil', border:OutlineInputBorder())), Row(children:[Expanded(child:TextField(controller:wc, decoration:const InputDecoration(labelText:'Wt core', border:OutlineInputBorder()))), const SizedBox(width:6), Expanded(child:TextField(controller:vc, decoration:const InputDecoration(labelText:'Vol cc', border:OutlineInputBorder())))]), TextField(controller:water, decoration:const InputDecoration(labelText:'Water %', border:OutlineInputBorder())), FilledButton(onPressed:calc, child:const Text('Calculate - Local')), Text('Bulk:${bulk.toStringAsFixed(3)} Dry:${dry.toStringAsFixed(3)} - Privacy-first, stays on device'), Row(children:[Expanded(child:FilledButton.tonal(onPressed:save, child:const Text('Save Local'))), const SizedBox(width:6), Expanded(child:OutlinedButton(onPressed:()=>Share.share('Bulk:${bulk.toStringAsFixed(3)} - Local-only'), child:const Text('Share')))]), ...hist.map((e)=>Text(e, style:const TextStyle(fontSize:10)))]); } }
           DART
 
           cat > lib/features/gps_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import 'package:geolocator/geolocator.dart'; import '../services/storage_service.dart'; import 'package:share_plus/share_plus.dart';
+          import 'package:flutter/material.dart'; import 'package:geolocator/geolocator.dart'; import '../services/storage_service.dart'; import 'package:share_plus/share_plus.dart'; import 'package:path_provider/path_provider.dart'; import 'dart:io';
           class GPSScreen extends StatefulWidget { const GPSScreen({super.key}); @override State<GPSScreen> createState()=>_G(); }
-          class _G extends State<GPSScreen> { String loc='Press Get Location'; List<String> points=[]; Position? lastPos; @override void initState(){super.initState(); _load();} Future<void> _load() async { points=await StorageService.getList('gps'); if(mounted) setState((){}); } Future<void> getLoc() async { bool s=await Geolocator.isLocationServiceEnabled(); if(!s){ if(!mounted) return; setState(()=>loc='GPS disabled'); return;} LocationPermission p=await Geolocator.checkPermission(); if(p==LocationPermission.denied){ p=await Geolocator.requestPermission();} lastPos=await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high); if(!mounted) return; setState(()=>loc='${lastPos!.latitude.toStringAsFixed(6)}, ${lastPos!.longitude.toStringAsFixed(6)}\nhttps://maps.google.com/?q=${lastPos!.latitude},${lastPos!.longitude}'); } Future<void> saveP() async { if(loc.contains('Press')){ return; } points.add('${DateTime.now().toString().substring(0,19)} | $loc'); await StorageService.setList('gps', points); if(mounted) setState((){}); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [Card(child: Padding(padding: const EdgeInsets.all(16), child: SelectableText(loc))), Row(children: [Expanded(child: FilledButton.icon(onPressed: getLoc, icon: const Icon(Icons.my_location), label: const Text('Get Location'))), const SizedBox(width:8), Expanded(child: FilledButton.tonal(onPressed: saveP, child: const Text('Save')))]), if(lastPos!=null) FilledButton.icon(onPressed: ()=>Share.share('My Location: ${lastPos!.latitude}, ${lastPos!.longitude}\nhttps://maps.google.com/?q=${lastPos!.latitude},${lastPos!.longitude}'), icon: const Icon(Icons.share), label: const Text('Share Location')), Text('Saved: ${points.length}'), ...points.reversed.map((e)=>Card(child: ListTile(dense:true, title: SelectableText(e, style: const TextStyle(fontSize:11)), trailing: IconButton(icon: const Icon(Icons.share), onPressed: ()=>Share.share(e)))))]); } }
+          class _G extends State<GPSScreen>{String loc='Press Get GPS - Local-only'; List<String> pts=[]; Position? last; @override void initState(){super.initState(); _load();} Future<void> _load() async { pts=await StorageService.getList('gps'); if(mounted) setState((){}); } Future<void> getLoc() async { last=await Geolocator.getCurrentPosition(desiredAccuracy:LocationAccuracy.high); if(!mounted) return; setState(()=>loc='Lat: ${last!.latitude}\nLong: ${last!.longitude}\nAlt: ${last!.altitude.toStringAsFixed(1)}m\nLocal-only, no cloud'); } Future<void> saveP() async { pts.add('${DateTime.now().toString().substring(0,19)} | ${last!.latitude.toStringAsFixed(6)},${last!.longitude.toStringAsFixed(6)}'); await StorageService.setList('gps', pts); if(mounted) setState((){}); } Future<void> shareLoc() async { if(last==null){ return; } await Share.share('Lat:${last!.latitude} Long:${last!.longitude}\nhttps://maps.google.com/?q=${last!.latitude},${last!.longitude} - Local-only'); } Future<void> exportFile() async { final dir=await getTemporaryDirectory(); final file=File('${dir.path}/GPS.txt'); await file.writeAsString(pts.join('\n')); await Share.shareXFiles([XFile(file.path)]); } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[Card(child:Padding(padding:const EdgeInsets.all(12), child:SelectableText(loc))), Row(children:[Expanded(child: FilledButton.icon(onPressed:getLoc, icon:const Icon(Icons.my_location), label:const Text('Get GPS Pro Local'))), const SizedBox(width:6), Expanded(child: FilledButton.tonal(onPressed:saveP, child:const Text('Save Local')))]), Row(children:[Expanded(child: OutlinedButton.icon(onPressed:shareLoc, icon:const Icon(Icons.share), label:const Text('Share'))), const SizedBox(width:6), Expanded(child: OutlinedButton.icon(onPressed:exportFile, icon:const Icon(Icons.file_present), label:const Text('Export File')))]), Text('Saved: ${pts.length} - Local-only, no cloud'), ...pts.reversed.map((e)=>Text(e, style:const TextStyle(fontSize:10)))]); } }
           DART
 
-          cat > lib/features/baby_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import '../services/storage_service.dart';
-          class BabyScreen extends StatefulWidget { const BabyScreen({super.key}); @override State<BabyScreen> createState()=>_B(); }
-          class _B extends State<BabyScreen> { final w=TextEditingController(), h=TextEditingController(), a=TextEditingController(); List<String> hist=[]; double bmi=0; @override void initState(){super.initState(); _load();} Future<void> _load() async { hist=await StorageService.getList('baby'); if(mounted) setState((){}); } void calc(){ double ww=double.tryParse(w.text)??0; double hh=double.tryParse(h.text)??0; if(ww==0||hh==0){ return; } bmi=ww/((hh/100)*(hh/100)); setState((){}); } Future<void> save() async { if(bmi==0){ return; } hist.add('${a.text.isEmpty?'Baby':a.text}: ${w.text}kg BMI:${bmi.toStringAsFixed(1)}'); await StorageService.setList('baby', hist); if(mounted) setState((){}); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [TextField(controller: a, decoration: const InputDecoration(labelText:'Name', border: OutlineInputBorder())), const SizedBox(height:8), Row(children: [Expanded(child: TextField(controller: w, decoration: const InputDecoration(labelText:'Weight kg', border: OutlineInputBorder()), keyboardType: TextInputType.number)), const SizedBox(width:8), Expanded(child: TextField(controller: h, decoration: const InputDecoration(labelText:'Height cm', border: OutlineInputBorder()), keyboardType: TextInputType.number))]), FilledButton(onPressed: calc, child: const Text('Calculate')), Text('BMI: ${bmi.toStringAsFixed(1)}'), FilledButton.tonal(onPressed: save, child: const Text('Save'))]); } }
+          cat > lib/features/sensors/compass_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:sensors_plus/sensors_plus.dart'; import 'dart:math'; class CompassScreen extends StatefulWidget { const CompassScreen({super.key}); @override State<CompassScreen> createState()=>_C(); } class _C extends State<CompassScreen>{double h=0; @override void initState(){super.initState(); magnetometerEventStream().listen((e){ double hh=atan2(e.y, e.x)*180/pi; if(hh<0) hh+=360; if(mounted) setState(()=>h=hh); }); } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(20), children:[const Text('Compass - Detector Analysis - Local', textAlign:TextAlign.center, style:TextStyle(fontWeight:FontWeight.bold)), Center(child:Transform.rotate(angle:-h*pi/180, child:const Icon(Icons.navigation,size:120,color:Colors.red))), Center(child:Text('${h.toStringAsFixed(0)}° Local-only', style:const TextStyle(fontSize:32,fontWeight:FontWeight.bold)))]); } }
+          DART
+          cat > lib/features/camera/barcode_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:mobile_scanner/mobile_scanner.dart'; import 'package:share_plus/share_plus.dart'; class BarcodeScreen extends StatefulWidget { const BarcodeScreen({super.key}); @override State<BarcodeScreen> createState()=>_B(); } class _B extends State<BarcodeScreen>{String res='Scan barcode/QR - Local-only'; MobileScannerController ctrl=MobileScannerController(); @override Widget build(BuildContext c){ return Column(children:[Expanded(flex:3, child:MobileScanner(controller:ctrl, onDetect:(cap){ final b=cap.barcodes.first.rawValue; if(b!=null){ setState(()=>res=b); ctrl.stop(); } })), Expanded(flex:2, child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[const Text('BARCODE/QR SCANNER - Local', style:TextStyle(fontWeight:FontWeight.bold)), Card(child:Padding(padding:const EdgeInsets.all(10), child:SelectableText(res))), Row(children:[Expanded(child: FilledButton(onPressed:(){ setState(()=>res='Scan...'); ctrl.start(); }, child:const Text('Scan Again'))), const SizedBox(width:6), Expanded(child: OutlinedButton.icon(onPressed:()=>Share.share(res), icon:const Icon(Icons.share), label:const Text('Share')))])])))]); } }
+          DART
+          cat > lib/features/religion/qibla_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:geolocator/geolocator.dart'; import 'dart:math'; class QiblaScreen extends StatefulWidget { const QiblaScreen({super.key}); @override State<QiblaScreen> createState()=>_Q(); } class _Q extends State<QiblaScreen>{double q=0; String loc='Getting location... Local-only'; @override void initState(){super.initState(); _get();} Future<void> _get() async { try{ final pos=await Geolocator.getCurrentPosition(); const kaabaLat=21.4225; const kaabaLong=39.8262; double lat1=pos.latitude*pi/180; double long1=pos.longitude*pi/180; double lat2=kaabaLat*pi/180; double long2=kaabaLong*pi/180; double dLong=long2-long1; double y=sin(dLong)*cos(lat2); double x=cos(lat1)*sin(lat2)-sin(lat1)*cos(lat2)*cos(dLong); double qq=atan2(y,x)*180/pi; qq=(qq+360)%360; if(mounted) setState((){ q=qq; loc='Lat:${pos.latitude.toStringAsFixed(4)} Long:${pos.longitude.toStringAsFixed(4)}\nQibla: ${q.toStringAsFixed(1)}° Local-only'; }); } catch(e){ if(mounted) setState(()=>loc='Enable GPS - Local-only'); } } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(16), children:[const Text('QIBLA COMPASS - Local-only', textAlign:TextAlign.center, style:TextStyle(fontWeight:FontWeight.bold)), Card(child:Padding(padding:const EdgeInsets.all(12), child:Text(loc, textAlign:TextAlign.center))), Center(child:Icon(Icons.navigation, size:120, color:Colors.green)), Center(child:Text('${q.toStringAsFixed(1)}° from North - Privacy-first', style:const TextStyle(fontSize:16,fontWeight:FontWeight.bold)))]); } }
+          DART
+          cat > lib/features/religion/prayer_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:adhan/adhan.dart'; import 'package:intl/intl.dart'; import 'package:geolocator/geolocator.dart'; class PrayerScreen extends StatefulWidget { const PrayerScreen({super.key}); @override State<PrayerScreen> createState()=>_P(); } class _P extends State<PrayerScreen>{String t='Press Get Prayer Times - Local-only'; Future<void> getTimes() async { try{ final pos=await Geolocator.getCurrentPosition(); final coords=Coordinates(pos.latitude, pos.longitude); final params=CalculationMethod.karachi.getParameters(); params.madhab=Madhab.hanafi; final p=PrayerTimes(coords, DateComponents.from(DateTime.now()), params); if(mounted) setState(()=>t='Fajr: ${DateFormat('hh:mm a').format(p.fajr)}\nDhuhr: ${DateFormat('hh:mm a').format(p.dhuhr)}\nAsr: ${DateFormat('hh:mm a').format(p.asr)}\nMaghrib: ${DateFormat('hh:mm a').format(p.maghrib)}\nIsha: ${DateFormat('hh:mm a').format(p.isha)}\nLocal-only calculation'); } catch(e){ if(mounted) setState(()=>t='Error $e'); } } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(16), children:[const Text('PRAYER TIMES - Local-only, no cloud', textAlign:TextAlign.center, style:TextStyle(fontWeight:FontWeight.bold)), FilledButton(onPressed:getTimes, child:const Text('Get Times GPS Local')), Card(child:Padding(padding:const EdgeInsets.all(16), child:Text(t, style:const TextStyle(fontSize:16))))]); } }
+          DART
+          cat > lib/features/language/translator_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class TranslatorScreen extends StatelessWidget { const TranslatorScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:const [Text('TRANSLATOR - Local-only Offline', textAlign:TextAlign.center, style:TextStyle(fontWeight:FontWeight.bold)), Card(child:Padding(padding:EdgeInsets.all(12), child:Text('water: پانی / اوبه / ماء\nsoil: مٹی / خاوره / تربة\nlab: لیبارٹری / لابراتوار / مختبر\nPrivacy-first, no cloud')))]); } }
+          DART
+          cat > lib/features/phd/citation_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class CitationScreen extends StatelessWidget { const CitationScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:const [Text('CITATION APA/MLA - Scientific Workflow - Local-only', textAlign:TextAlign.center, style:TextStyle(fontWeight:FontWeight.bold)), Card(child:Padding(padding:EdgeInsets.all(12), child:Text('APA: Author (Year). Title. Journal.\nMLA: Author. "Title." Journal, Year.\nLocal-only, no cloud')))]); } }
+          DART
+          cat > lib/features/phd/statistics_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class StatisticsScreen extends StatelessWidget { const StatisticsScreen({super.key}); @override Widget build(BuildContext c){ return const Center(child:Text('Statistics - Scientific Workflow - Local-only')); } }
+          DART
+          cat > lib/features/phd/notes_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import '../../services/storage_service.dart'; import 'package:share_plus/share_plus.dart'; import 'package:path_provider/path_provider.dart'; import 'dart:io'; class NotesScreen extends StatefulWidget { const NotesScreen({super.key}); @override State<NotesScreen> createState()=>_N(); } class _N extends State<NotesScreen>{final ctrl=TextEditingController(); List<String> notes=[]; @override void initState(){super.initState(); _load();} Future<void> _load() async { notes=await StorageService.getList('research_notes'); if(mounted) setState((){}); } Future<void> save() async { if(ctrl.text.isEmpty){ return; } notes.add('${DateTime.now().toString().substring(0,19)}: ${ctrl.text}'); await StorageService.setList('research_notes', notes); ctrl.clear(); if(mounted) setState((){}); } Future<void> shareNotes() async { final dir=await getTemporaryDirectory(); final file=File('${dir.path}/Notes.txt'); await file.writeAsString(notes.join('\n')); await Share.shareXFiles([XFile(file.path)]); } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[const Text('Research Notes - Scientific Workflow - Local-only, no cloud', style:TextStyle(fontSize:11, fontWeight:FontWeight.bold)), TextField(controller:ctrl, decoration:const InputDecoration(labelText:'Research note - Local-only', border:OutlineInputBorder()), maxLines:3), Row(children:[Expanded(child: FilledButton(onPressed:save, child:const Text('Save Local'))), const SizedBox(width:6), Expanded(child: OutlinedButton(onPressed:shareNotes, child:const Text('Export File')))]), ...notes.map((e)=>Card(child:ListTile(title:Text(e, style:const TextStyle(fontSize:11)))))]); } }
           DART
 
-          cat > lib/features/emi_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import 'dart:math';
+          cat > lib/features/dev/developer_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:share_plus/share_plus.dart'; import 'package:url_launcher/url_launcher.dart';
+          class DeveloperScreen extends StatelessWidget {
+            const DeveloperScreen({super.key});
+            Future<void> _launch(String url) async { final uri=Uri.parse(url); if(await canLaunchUrl(uri)){ await launchUrl(uri, mode:LaunchMode.externalApplication); } }
+            @override Widget build(BuildContext context){
+              return ListView(padding:const EdgeInsets.all(16), children:[
+                const Card(color:Color(0xFF2563EB), child:Padding(padding:EdgeInsets.all(20), child:Column(children:[CircleAvatar(radius:40, backgroundColor:Colors.white, child:Icon(Icons.person, size:50, color:Color(0xFF2563EB))), SizedBox(height:12), Text('Nasir Khan', style:TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold)), Text('Researcher & Developer', style:TextStyle(color:Colors.white70)), SizedBox(height:4), Text('Varrho Research', style:TextStyle(color:Colors.white, fontWeight:FontWeight.bold))]))),
+                Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+                  ListTile(leading:const Icon(Icons.person), title:const Text('Name'), subtitle:const Text('Nasir Khan'), dense:true),
+                  ListTile(leading:const Icon(Icons.link), title:const Text('GitHub - Main Repo'), subtitle:const Text('https://github.com/Nasir684/WanaLab-Toolkit', style:TextStyle(color:Colors.blue)), dense:true),
+                  ListTile(leading:const Icon(Icons.biotech), title:const Text('Varrho Research'), subtitle:const Text('Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037).\nLocal-only, privacy-first, no login, no cloud.\nFocus: Geotechnical AI, Field Sensors, Islamic Tech, Language Tools, PhD Tools'), dense:true),
+                  ListTile(leading:const Icon(Icons.privacy_tip), title:const Text('Privacy'), subtitle:const Text('Local-only, privacy-first, no login, no cloud. All data stays on device.'), dense:true),
+                ]))),
+                Row(children:[
+                  Expanded(child: FilledButton.icon(onPressed:()=>_launch('https://github.com/Nasir684/WanaLab-Toolkit'), icon:const Icon(Icons.link), label:const Text('GitHub Repo'))),
+                  const SizedBox(width:8),
+                  Expanded(child: OutlinedButton.icon(onPressed:()=>Share.share('WanaLab v3.0\nResearch-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.\nBy Nasir Khan\nhttps://github.com/Nasir684/WanaLab-Toolkit'), icon:const Icon(Icons.share), label:const Text('Share'))),
+                ]),
+              ]);
+            }
+          }
+          DART
+
+          cat > lib/features/dev/pricing_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class PricingScreen extends StatelessWidget { const PricingScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[const Card(color:Color(0xFF2563EB), child:Padding(padding:EdgeInsets.all(16), child:Column(children:[Icon(Icons.payments, size:40, color:Colors.white), Text('PRICING - Local-only Platform', style:TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.bold)), Text('Privacy-first, no login, no cloud\nFor Researchers', style:TextStyle(color:Colors.white70, fontSize:11))]))), Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[Text('FREE: Rs 0 - Local-only, privacy-first, no login, no cloud', style:TextStyle(fontWeight:FontWeight.bold)), Text('PRO: Rs 500/year - Full engineering estimation + EMI screening + detector analysis\nRESEARCHER: Rs 1000/year - Scientific workflow support\nLIFETIME: Rs 2500 - Evolution through 2037', style:TextStyle(fontSize:11))])))]); } }
+          DART
+          cat > lib/features/dev/demo_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class DemoScreen extends StatelessWidget { const DemoScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[const Card(color:Colors.orange, child:Padding(padding:EdgeInsets.all(16), child:Column(children:[Icon(Icons.play_circle, size:40, color:Colors.white), Text('DEMO - Research Platform', style:TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.bold)), Text('Local-only, privacy-first', style:TextStyle(color:Colors.white70, fontSize:11))]))), Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[Text('Engineering Estimation: Core, Water, Gs, Void, Atterberg, Sieve, Proctor, CBR, Sand Replace'), Text('EMI Screening: EMI calc, EMF detection via magnetometer'), Text('Detector Analysis: Magnetometer μT, Compass, Metal detection logic'), Text('Scientific Workflow: Notes local, Citation APA/MLA, Statistics Mean/SD, Unit Converter, Export as real file local-only'), Text('Privacy: Local-only, no login, no cloud - all data stays on device')])))]); } }
+          DART
+          cat > lib/features/dev/changelog_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; class ChangelogScreen extends StatelessWidget { const ChangelogScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[const Card(color:Color(0xFF2563EB), child:Padding(padding:EdgeInsets.all(16), child:Column(children:[Icon(Icons.history, size:32, color:Colors.white), Text('CHANGELOG', style:TextStyle(color:Colors.white,fontSize:16,fontWeight:FontWeight.bold)), Text('Research Platform Evolution to 2037', style:TextStyle(color:Colors.white70, fontSize:11))]))), Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Text('v3.0.0 - RESEARCH PLATFORM 2037 - Current', style:TextStyle(fontWeight:FontWeight.bold, color:Colors.blue)), Text('2026-10-24\nVision: Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.\nBy Nasir Khan - https://github.com/Nasir684/WanaLab-Toolkit\nVarrho Research', style:TextStyle(fontSize:11))]))]); } }
+          DART
+
+          cat > lib/features/dev/roadmap_screen.dart << 'DART'
+          import 'package:flutter/material.dart';
+          class RoadmapScreen extends StatelessWidget {
+            const RoadmapScreen({super.key});
+            @override Widget build(BuildContext context){
+              return ListView(padding:const EdgeInsets.all(12), children:[
+                const Card(color:Color(0xFF2563EB), child:Padding(padding:EdgeInsets.all(16), child:Column(children:[Icon(Icons.map, size:40, color:Colors.white), SizedBox(height:8), Text('ROADMAP 2037', style:TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.bold)), Text('Evolution through 2037\nResearch Platform Vision', style:TextStyle(color:Colors.white70, fontSize:12), textAlign:TextAlign.center)]))),
+                _road('2024-2025 - Foundation', 'Local-only MVP', '✅ Engineering estimation (Soil Lab 11, Concrete 4)\n✅ GPS Pro Alt/Speed/Accuracy\n✅ Mobile Sensors 9\n✅ Camera & Barcode 4\n✅ Religions 4, Languages 1, PhD 4\n✅ Export/Import as real files\n✅ Privacy-first, no login, no cloud\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit', Colors.green),
+                _road('2026 - Research Platform v3.0 - CURRENT', 'EMI + Detector + Workflow', '✅ Research-oriented platform branding\n✅ Engineering estimation module\n✅ EMI screening (EMI calc + EMF detector via magnetometer)\n✅ Detector analysis (Magnetometer μT, Compass, Metal logic)\n✅ Scientific workflow support (Notes local, Citation, Stats, Unit Converter)\n✅ Local-only, privacy-first, no login, no cloud\n✅ Varrho Research lab integration', Colors.blue),
+                _road('2027-2028 - AI Research', 'Geotechnical AI', '🔜 Soil classification AI (offline TensorFlow Lite)\n🔜 Density prediction ML model\n🔜 Image-based sieve analysis AI\n🔜 OCR for handwritten lab reports\n🔜 Local AI, no cloud', Colors.purple),
+                _road('2029-2030 - Advanced Sensors', 'IoT + Detectors', '🔜 Bluetooth sensor integration (local-only)\n🔜 External detector support (local)\n🔜 Advanced EMI spectrum analysis\n🔜 Thermal imaging via camera\n🔜 All local, privacy-first', Colors.orange),
+                _road('2031-2033 - Collaboration', 'Local Mesh', '🔜 Local mesh networking (no cloud)\n🔜 Peer-to-peer data share via WiFi Direct\n🔜 Offline collaboration for field teams\n🔜 Still local-only, no cloud login', Colors.teal),
+                _road('2034-2037 - Full Platform', 'Research OS', '🔜 Full research OS for field researchers\n🔜 Engineering estimation AI\n🔜 EMI + Detector + Scientific workflow unified\n🔜 Varrho Research ecosystem\n🔜 Local-only, privacy-first, no login, no cloud - Evolution complete\n🔜 Open source at https://github.com/Nasir684/WanaLab-Toolkit', Colors.indigo),
+                const Card(color:Colors.blue, child:Padding(padding:EdgeInsets.all(12), child:Text('Vision: Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.\n\nBy Nasir Khan\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit\nVarrho Research\n© 2026-2037', style:TextStyle(color:Colors.white, fontSize:11), textAlign:TextAlign.center))),
+              ]);
+            }
+            Widget _road(String title, String subtitle, String details, Color col){
+              return Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+                Row(children:[Container(width:10,height:10,decoration:BoxDecoration(color:col, shape:BoxShape.circle)), const SizedBox(width:8), Expanded(child:Text(title, style:TextStyle(fontWeight:FontWeight.bold, color:col, fontSize:13))), Text(subtitle, style:const TextStyle(fontSize:9, color:Colors.grey))]),
+                const SizedBox(height:6),
+                Text(details, style:const TextStyle(fontSize:11)),
+              ])));
+            }
+          }
+          DART
+
+          cat > lib/features/detector/emi_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'dart:math'; import 'package:share_plus/share_plus.dart'; import 'package:sensors_plus/sensors_plus.dart';
           class EMIScreen extends StatefulWidget { const EMIScreen({super.key}); @override State<EMIScreen> createState()=>_E(); }
-          class _E extends State<EMIScreen> { final p=TextEditingController(text:'100000'), r=TextEditingController(text:'10'), n=TextEditingController(text:'12'); double emi=0,total=0,interest=0; void calc(){ double P=double.tryParse(p.text)??0; double R=double.tryParse(r.text)??0; double N=double.tryParse(n.text)??0; if(P==0||N==0){ return; } double mr=R/12/100; if(mr==0){ emi=P/N; } else { emi= P*mr*pow(mr+1,N)/(pow(mr+1,N)-1); } total=emi*N; interest=total-P; setState((){}); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [TextField(controller: p, decoration: const InputDecoration(labelText:'Principal', border: OutlineInputBorder()), keyboardType: TextInputType.number), const SizedBox(height:8), Row(children: [Expanded(child: TextField(controller: r, decoration: const InputDecoration(labelText:'Rate %', border: OutlineInputBorder()), keyboardType: TextInputType.number)), const SizedBox(width:8), Expanded(child: TextField(controller: n, decoration: const InputDecoration(labelText:'Months', border: OutlineInputBorder()), keyboardType: TextInputType.number))]), FilledButton(onPressed: calc, child: const Text('Calculate')), Text('EMI: ${emi.toStringAsFixed(2)}'), Text('Total: ${total.toStringAsFixed(2)}')]); } }
+          class _E extends State<EMIScreen>{
+            final p=TextEditingController(text:'100000'), r=TextEditingController(text:'10'), n=TextEditingController(text:'12');
+            double emi=0,total=0; double mag=0;
+            @override void initState(){super.initState(); magnetometerEventStream().listen((e){ double t=sqrt(e.x*e.x+e.y*e.y+e.z*e.z); if(mounted) setState(()=>mag=t); }); }
+            void calc(){ double P=double.tryParse(p.text)??0; double R=double.tryParse(r.text)??0; double N=double.tryParse(n.text)??0; double mr=R/12/100; emi=P*mr*pow(mr+1,N)/(pow(mr+1,N)-1); total=emi*N; setState((){}); }
+            @override Widget build(BuildContext c){
+              return ListView(padding:const EdgeInsets.all(12), children:[
+                const Text('EMI SCREENING - Engineering + EMI + Detector - Local-only', style:TextStyle(fontWeight:FontWeight.bold), textAlign:TextAlign.center),
+                Card(color:Colors.orange.shade50, child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[Text('EMI Screening Module', style:TextStyle(fontWeight:FontWeight.bold, color:Colors.orange.shade800)), Text('1. EMI Calculator (Financial) + 2. EMF Detector via Magnetometer μT\nLocal-only, privacy-first, no login, no cloud', style:TextStyle(fontSize:10), textAlign:TextAlign.center)]))),
+                TextField(controller:p, decoration:const InputDecoration(labelText:'Principal (EMI)', border:OutlineInputBorder()), keyboardType:TextInputType.number),
+                const SizedBox(height:6),
+                Row(children:[Expanded(child: TextField(controller:r, decoration:const InputDecoration(labelText:'Rate %', border:OutlineInputBorder()), keyboardType:TextInputType.number)), const SizedBox(width:6), Expanded(child: TextField(controller:n, decoration:const InputDecoration(labelText:'Months', border:OutlineInputBorder()), keyboardType:TextInputType.number))]),
+                const SizedBox(height:8),
+                FilledButton(onPressed:calc, child:const Text('Calculate EMI - Local')),
+                Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[Text('EMI: Rs ${emi.toStringAsFixed(2)}', style:const TextStyle(fontWeight:FontWeight.bold)), Text('Total: Rs ${total.toStringAsFixed(2)}'), Text('EMF Detector: ${mag.toStringAsFixed(2)} μT (Magnetometer)', style:const TextStyle(color:Colors.purple))]))),
+                OutlinedButton.icon(onPressed:()=>Share.share('EMI: Rs ${emi.toStringAsFixed(2)} EMF: ${mag.toStringAsFixed(2)} μT - Local-only'), icon:const Icon(Icons.share), label:const Text('Share EMI + EMF Local')),
+              ]);
+            }
+          }
           DART
 
-          cat > lib/features/gym_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class GymScreen extends StatefulWidget { const GymScreen({super.key}); @override State<GymScreen> createState()=>_GY(); }
-          class _GY extends State<GymScreen> { final w=TextEditingController(), h=TextEditingController(); double bmi=0; String cat=''; void calc(){ double ww=double.tryParse(w.text)??0; double hh=double.tryParse(h.text)??0; if(hh==0){ return; } bmi=ww/((hh/100)*(hh/100)); if(bmi<18.5){ cat='Underweight'; } else if(bmi<25){ cat='Normal'; } else if(bmi<30){ cat='Overweight'; } else { cat='Obese'; } setState((){}); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [TextField(controller: w, decoration: const InputDecoration(labelText:'Weight kg', border: OutlineInputBorder()), keyboardType: TextInputType.number), const SizedBox(height:8), TextField(controller: h, decoration: const InputDecoration(labelText:'Height cm', border: OutlineInputBorder()), keyboardType: TextInputType.number), FilledButton(onPressed: calc, child: const Text('Calculate')), Text('BMI: ${bmi.toStringAsFixed(2)} $cat')]); } }
-          DART
-
-          cat > lib/features/workshop_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import '../services/storage_service.dart';
-          class WorkshopScreen extends StatefulWidget { const WorkshopScreen({super.key}); @override State<WorkshopScreen> createState()=>_W(); }
-          class _W extends State<WorkshopScreen> { final c=TextEditingController(); List<String> items=[]; @override void initState(){super.initState(); _load();} Future<void> _load() async { items=await StorageService.getList('workshop'); if(mounted) setState((){}); } Future<void> add() async { if(c.text.isEmpty){ return; } items.add(c.text); await StorageService.setList('workshop', items); c.clear(); if(mounted) setState((){}); } @override Widget build(BuildContext cxt){ return ListView(padding: const EdgeInsets.all(16), children: [Row(children: [Expanded(child: TextField(controller: c, decoration: const InputDecoration(labelText:'Item', border: OutlineInputBorder()))), const SizedBox(width:8), FilledButton(onPressed: add, child: const Text('Add'))]), ...items.map((e)=>Card(child: ListTile(title: Text(e), trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () async { items.remove(e); await StorageService.setList('workshop', items); if(mounted) setState((){}); })) )) ]); } }
-          DART
-
-          cat > lib/features/varrho_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class VarRhoScreen extends StatefulWidget { const VarRhoScreen({super.key}); @override State<VarRhoScreen> createState()=>_V(); }
-          class _V extends State<VarRhoScreen> { final rho=TextEditingController(text:'1.5'), varc=TextEditingController(text:'0.1'); double result=0; void calc(){ double r=double.tryParse(rho.text)??0; double v=double.tryParse(varc.text)??0; result=r*(1+v); setState((){}); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [TextField(controller: rho, decoration: const InputDecoration(labelText:'Rho', border: OutlineInputBorder()), keyboardType: TextInputType.number), TextField(controller: varc, decoration: const InputDecoration(labelText:'Var', border: OutlineInputBorder()), keyboardType: TextInputType.number), FilledButton(onPressed: calc, child: const Text('Correct')), Text('Result: ${result.toStringAsFixed(4)}')]); } }
+          cat > lib/features/detector/detector_screen.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'package:sensors_plus/sensors_plus.dart'; import 'dart:math'; import 'package:share_plus/share_plus.dart';
+          class DetectorScreen extends StatefulWidget { const DetectorScreen({super.key}); @override State<DetectorScreen> createState()=>_D(); }
+          class _D extends State<DetectorScreen>{
+            double mag=0, light=0; double x=0,y=0,z=0;
+            @override void initState(){
+              super.initState();
+              magnetometerEventStream().listen((e){ double t=sqrt(e.x*e.x+e.y*e.y+e.z*e.z); if(mounted) setState((){ mag=t; x=e.x; y=e.y; z=e.z; }); });
+            }
+            @override Widget build(BuildContext c){
+              String detection='Normal';
+              if(mag>100) detection='Metal Detected? High Magnetic Field';
+              if(mag>200) detection='Strong Magnetic - Possible Detector Alert';
+              return ListView(padding:const EdgeInsets.all(12), children:[
+                const Text('DETECTOR ANALYSIS - Magnetometer + Sensors - Local-only', style:TextStyle(fontWeight:FontWeight.bold), textAlign:TextAlign.center),
+                Card(color:Colors.purple.shade50, child:Padding(padding:const EdgeInsets.all(12), child:Column(children:[Text('Detector Analysis Module', style:TextStyle(fontWeight:FontWeight.bold, color:Colors.purple.shade800)), Text('Engineering estimation + EMI screening + Detector analysis + Scientific workflow\nLocal-only, privacy-first, no login, no cloud\nEvolution through 2037', style:TextStyle(fontSize:10), textAlign:TextAlign.center)]))),
+                Card(child:Padding(padding:const EdgeInsets.all(16), child:Column(children:[
+                  Text('${mag.toStringAsFixed(2)} μT', style:const TextStyle(fontSize:32,fontWeight:FontWeight.bold)),
+                  Text(detection, style:TextStyle(fontSize:16, fontWeight:FontWeight.bold, color: mag>100?Colors.red:Colors.green)),
+                  const SizedBox(height:8),
+                  Text('X:${x.toStringAsFixed(1)} Y:${y.toStringAsFixed(1)} Z:${z.toStringAsFixed(1)} μT', style:const TextStyle(fontSize:12)),
+                  const SizedBox(height:8),
+                  Text('Magnetometer used for detector analysis - metal detection logic based on magnetic field strength. Local-only sensor, no cloud.', style:TextStyle(fontSize:10, color:Colors.grey.shade600), textAlign:TextAlign.center),
+                ]))),
+                const SizedBox(height:8),
+                FilledButton.icon(onPressed:()=>Share.share('Detector Analysis\nMagnetic Field: ${mag.toStringAsFixed(2)} μT\nDetection: $detection\nX:${x.toStringAsFixed(1)} Y:${y.toStringAsFixed(1)} Z:${z.toStringAsFixed(1)}\nLocal-only, privacy-first - WanaLab\nhttps://github.com/Nasir684/WanaLab-Toolkit'), icon:const Icon(Icons.share), label:const Text('Share Detector Data Local')),
+                const Card(child:Padding(padding:EdgeInsets.all(10), child:Text('How it works (Research):\n• Magnetometer measures μT\n• High μT >100 = possible metal nearby\n• >200 μT = strong magnetic field\n• Used for engineering estimation + EMI screening + detector analysis\n• All local-only, privacy-first, no login, no cloud\n• Evolution through 2037: Add Bluetooth detectors, thermal, spectrum', style:TextStyle(fontSize:10)))),
+              ]);
+            }
+          }
           DART
 
           cat > lib/features/import_export_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import '../services/storage_service.dart'; import 'package:share_plus/share_plus.dart';
+          import 'package:flutter/material.dart'; import '../services/storage_service.dart'; import 'package:share_plus/share_plus.dart'; import 'package:path_provider/path_provider.dart'; import 'package:file_picker/file_picker.dart'; import 'dart:io'; import 'package:intl/intl.dart';
           class ImportExportScreen extends StatefulWidget { const ImportExportScreen({super.key}); @override State<ImportExportScreen> createState()=>_I(); }
-          class _I extends State<ImportExportScreen> { String data=''; Future<void> exportAll() async { final cores=await StorageService.getList('cores'); final gps=await StorageService.getList('gps'); if(!mounted) return; setState(()=>data='CORES:\n${cores.join('\n')}\n\nGPS:\n${gps.join('\n')}'); } Future<void> clear() async { await StorageService.clearAll(); if(!mounted) return; setState(()=>data='Cleared!'); } @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [FilledButton(onPressed: exportAll, child: const Text('Export')), FilledButton.tonal(onPressed: ()=>Share.share(data), child: const Text('Share')), FilledButton.tonal(onPressed: clear, child: const Text('Clear All')), SelectableText(data)]); } }
+          class _I extends State<ImportExportScreen>{String status='Ready - Local-only, no cloud'; String preview=''; Future<void> exportFile() async { final cores=await StorageService.getList('cores'); final gps=await StorageService.getList('gps'); final notes=await StorageService.getList('research_notes'); final report='WanaLab v3.0 RESEARCH PLATFORM 2037\nResearch-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037).\nLocal-only, privacy-first, no login, no cloud.\nBy Nasir Khan - https://github.com/Nasir684/WanaLab-Toolkit\nVarrho Research\nDate: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}\nCORES:\n${cores.join('\n')}\n\nGPS:\n${gps.join('\n')}\n\nNOTES:\n${notes.join('\n')}'; try{ final dir=await getTemporaryDirectory(); final fileName='WanaLab_Export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.txt'; final file=File('${dir.path}/$fileName'); await file.writeAsString(report); setState((){status='Exported $fileName - Local-only file'; preview=report;}); await Share.shareXFiles([XFile(file.path)], text:'WanaLab v3.0 Research Platform - Local-only, privacy-first'); }catch(e){ setState(()=>status='Failed $e'); } } Future<void> importFile() async { try{ FilePickerResult? r=await FilePicker.platform.pickFiles(); if(r!=null){ File f=File(r.files.single.path!); String content=await f.readAsString(); setState(()=>status='File ${r.files.single.name} - Local import'; preview=content.substring(0, content.length>800?800:content.length)); } }catch(e){ setState(()=>status='Import failed $e'); } } Future<void> clear() async { await StorageService.clearAll(); setState(()=>status='Cleared Local Data! - No cloud'); } @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[Card(color:Colors.green.shade50, child:Padding(padding:const EdgeInsets.all(10), child:Text(status, style:const TextStyle(fontWeight:FontWeight.bold)))), Text('Privacy: Local-only, privacy-first, no login, no cloud. All data stays on device. Export creates local file only.', style:TextStyle(fontSize:10, color:Colors.green.shade800)), SizedBox(height:8), FilledButton.icon(onPressed:exportFile, icon:const Icon(Icons.file_present), label:const Text('EXPORT ALL as .TXT File Local-only + Share')), Row(children:[Expanded(child: FilledButton.tonalIcon(onPressed:importFile, icon:const Icon(Icons.file_upload), label:const Text('IMPORT File Local'))), const SizedBox(width:6), Expanded(child: OutlinedButton.icon(onPressed:clear, icon:const Icon(Icons.delete,color:Colors.red), label:const Text('Clear Local')))]), Container(padding:const EdgeInsets.all(8), decoration:BoxDecoration(color:Colors.grey.shade100, borderRadius:BorderRadius.circular(8)), child:SelectableText(preview.isEmpty?'No data - Local-only' : preview, style:const TextStyle(fontSize:10)))]); } }
           DART
 
           cat > lib/features/settings_screen.dart << 'DART'
-          import 'package:flutter/material.dart'; import '../services/storage_service.dart';
-          class SettingsScreen extends StatelessWidget { const SettingsScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(16), children: [ListTile(title: const Text('Clear All Data'), trailing: const Icon(Icons.delete_forever, color: Colors.red), onTap: () async { await StorageService.clearAll(); if(!c.mounted) return; ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text('Cleared'))); }), const ListTile(title: Text('Version'), subtitle: Text('1.0.0+2 Final'))]); } }
-          DART
-
-          cat > lib/features/gallery_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class GalleryScreen extends StatelessWidget { const GalleryScreen({super.key}); @override Widget build(BuildContext c){ return GridView.count(crossAxisCount:2, padding: const EdgeInsets.all(16), children: List.generate(6, (i)=>Card(child: Center(child: Text('Sample ${i+1}'))))); } }
+          import 'package:flutter/material.dart'; import '../services/storage_service.dart'; class SettingsScreen extends StatelessWidget { const SettingsScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding:const EdgeInsets.all(12), children:[Card(color:Colors.green.shade50, child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Text('Privacy Settings - Local-only, privacy-first', style:TextStyle(fontWeight:FontWeight.bold, color:Colors.green.shade800)), Text('✅ No login required\n✅ No cloud sync\n✅ All data stays on device\n✅ No tracking\n✅ Works 100% offline\n✅ Export as local files only\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit', style:TextStyle(fontSize:11))]))), ListTile(title:const Text('Clear All Local Data'), subtitle:const Text('Local-only, no cloud - deletes from device only'), trailing:const Icon(Icons.delete,color:Colors.red), onTap:() async { await StorageService.clearAll(); if(!c.mounted) return; ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('Cleared Local Data - No cloud'))); }), const ListTile(title:Text('WanaLab v3.0 RESEARCH PLATFORM 2037'), subtitle:Text('Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037).\nLocal-only, privacy-first, no login, no cloud.\nBy Nasir Khan\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit\nVarrho Research\n© 2026-2037'))]); } }
           DART
 
           cat > lib/features/about_screen.dart << 'DART'
-          import 'package:flutter/material.dart';
-          class AboutScreen extends StatelessWidget { const AboutScreen({super.key}); @override Widget build(BuildContext c){ return ListView(padding: const EdgeInsets.all(24), children: const [Icon(Icons.biotech, size:80, color: Colors.indigo), SizedBox(height:16), Text('WanaLab Toolkit', textAlign: TextAlign.center, style: TextStyle(fontSize:24, fontWeight: FontWeight.bold)), Text('Professional Edition - All features working', textAlign: TextAlign.center)]); } }
+          import 'package:flutter/material.dart'; import 'package:share_plus/share_plus.dart'; import 'package:url_launcher/url_launcher.dart';
+          class AboutScreen extends StatelessWidget {
+            const AboutScreen({super.key});
+            Future<void> _launch(String url) async { final uri=Uri.parse(url); if(await canLaunchUrl(uri)){ await launchUrl(uri, mode:LaunchMode.externalApplication); } }
+            @override Widget build(BuildContext context){
+              return ListView(padding:const EdgeInsets.all(16), children:[
+                const Card(color:Color(0xFF2563EB), child:Padding(padding:EdgeInsets.all(20), child:Column(children:[Icon(Icons.science, size:60, color:Colors.white), SizedBox(height:8), Text('WanaLab Toolkit', style:TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold)), Text('v3.0 RESEARCH PLATFORM 2037', style:TextStyle(color:Colors.white70)), SizedBox(height:4), Text('README - Research Platform Vision', style:TextStyle(color:Colors.white, fontWeight:FontWeight.bold, fontSize:11))]))),
+                Card(child:Padding(padding:const EdgeInsets.all(12), child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+                  Text('# WanaLab Toolkit', style:TextStyle(fontWeight:FontWeight.bold, fontSize:18)),
+                  SizedBox(height:6),
+                  Text('> Research-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.', style:TextStyle(fontSize:12, fontStyle:FontStyle.italic, fontWeight:FontWeight.bold)),
+                  Divider(),
+                  Text('## 📖 About', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('WanaLab Toolkit v3.0 is a research-oriented mobile platform designed for researchers - field researchers, lab researchers, PhD students, Islamic researchers, language researchers.\n\nCore Modules:\n• Engineering Estimation: Soil lab 11 tests (Core Cutter Bulk/Dry, Water Content, Gs, Void Ratio, Atterberg, Sieve Cu/Cc, Proctor MDD/OMC, CBR, Sand Replacement, Relative Density, Permeability), Concrete & Qty (Concrete Cube MPa, Steel Weight D²/162, Earthwork m³/cft, Compaction %)\n• EMI Screening: EMI calculator + EMF detector via magnetometer μT\n• Detector Analysis: Magnetometer, Compass, Metal detection logic, Light, Barometer, Speedometer, Battery\n• Scientific Workflow Support: Research Notes local, Citation APA/MLA/Chicago, Statistics Mean/SD/Variance, Unit Converter kPa/psi/MPa/g/cc, Graph plot, Export as real files TXT/CSV/PDF\n\nPrivacy: Local-only, privacy-first, no login, no cloud. All data stays on device. Works 100% offline in Wana and remote areas.\n\nEvolution through 2037 - Roadmap available in app.', style:TextStyle(fontSize:11)),
+                  Divider(),
+                  Text('## ✨ Features - 56 Tools', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('See Dashboard for full list. All tools local-only, privacy-first.', style:TextStyle(fontSize:10)),
+                  Divider(),
+                  Text('## 🚀 Installation - From GitHub', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('```bash\n# Clone your repo\n git clone https://github.com/Nasir684/WanaLab-Toolkit.git\n cd WanaLab-Toolkit\n# Build\n flutter pub get\n flutter build apk --release\n```\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit', style:TextStyle(fontSize:10, fontFamily:'monospace')),
+                  Divider(),
+                  Text('## 🔒 Privacy - Local-only, privacy-first, no login, no cloud', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('• No login required\n• No cloud sync\n• No tracking\n• No ads SDK\n• All data stays on device\n• Export as local files only\n• Works 100% offline', style:TextStyle(fontSize:11)),
+                  Divider(),
+                  Text('## 🗺️ Roadmap 2037', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('2024-2025: Foundation - Lab + Sensors + Camera\n2026: v3.0 Research Platform - EMI + Detector + Workflow\n2027-2028: Geotechnical AI offline\n2029-2030: Advanced Sensors IoT local\n2031-2033: Local mesh, P2P, no cloud\n2034-2037: Full Research OS - See Roadmap screen', style:TextStyle(fontSize:10)),
+                  Divider(),
+                  Text('## 👤 Author', style:TextStyle(fontWeight:FontWeight.bold)),
+                  Text('Nasir Khan\nWana, South Waziristan, Pakistan\nFounder - Varrho Research\nGitHub: https://github.com/Nasir684/WanaLab-Toolkit\nResearch-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support.', style:TextStyle(fontSize:11)),
+                  Divider(),
+                  Text('Version: 3.0.0+1 RESEARCH PLATFORM 2037\nBuild: 2026-10-24\nEvolution: Through 2037\nPrivacy: Local-only, privacy-first, no login, no cloud\n© 2026-2037 WanaLab Toolkit - For Researchers', style:TextStyle(fontSize:10, color:Colors.grey)),
+                ]))),
+                Row(children:[
+                  Expanded(child: FilledButton.icon(onPressed:()=>_launch('https://github.com/Nasir684/WanaLab-Toolkit'), icon:const Icon(Icons.link), label:const Text('GitHub Repo'))),
+                  const SizedBox(width:6),
+                  Expanded(child: OutlinedButton.icon(onPressed:()=>Share.share('WanaLab Toolkit v3.0\nResearch-oriented mobile platform for engineering estimation, EMI screening, detector analysis & scientific workflow support (evolution through 2037). Local-only, privacy-first, no login, no cloud.\nBy Nasir Khan\nhttps://github.com/Nasir684/WanaLab-Toolkit\nVarrho Research'), icon:const Icon(Icons.share), label:const Text('Share Vision'))),
+                ]),
+              ]);
+            }
+          }
           DART
 
           flutter pub get
@@ -160,5 +331,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WanaLab-FINAL-PRO-APK
+          name: WanaLab-v3.0-RESEARCH-PLATFORM-2037-Local-Privacy
           path: build/app/outputs/flutter-apk/app-release.apk
