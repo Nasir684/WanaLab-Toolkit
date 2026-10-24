@@ -4,29 +4,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-
-      - name: Rebuild Android folder
+      - name: Build
         run: |
-          # Delete old broken android folder that causes XML v4 error
+          python3 - << 'PY'
+          import tarfile, urllib.request, os
+          url="https://github.com/Nasir684/WanaLab-Toolkit/archive/main.tar.gz"
+          urllib.request.urlretrieve(url,"r.tar.gz")
+          with tarfile.open("r.tar.gz","r:gz") as tar:
+            for m in tar.getmembers():
+              if "/" not in m.name: continue
+              inner=m.name.split("/",1)[1]
+              if "\n" in inner or '"' in inner or "File name too long" in inner or "content" in inner or len(inner)>100: 
+                continue
+              if not (inner.startswith("lib/") or inner=="pubspec.yaml"): continue
+              if m.isfile():
+                d=os.path.dirname(inner)
+                if d: os.makedirs(d,exist_ok=True)
+                try: open(inner,"wb").write(tar.extractfile(m).read())
+                except: pass
+          PY
           rm -rf android
-          # Create brand new android folder compatible with SDK 33/34
-          flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
+          flutter create --project-name wana_lab_toolkit --org com.example --platforms=android .
           flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons
-
+          flutter build apk --release --no-tree-shake-icons
       - uses: actions/upload-artifact@v4
         with:
           name: WanaLab-APK
