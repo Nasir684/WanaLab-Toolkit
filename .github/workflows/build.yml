@@ -1,4 +1,4 @@
-name: clean
+name: build
 on: workflow_dispatch
 jobs:
   build:
@@ -8,17 +8,77 @@ jobs:
         with: {distribution: 'zulu', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.29.3', channel: 'stable'}
-      - name: Create CLEAN app
+
+      - name: Create 100% CLEAN project
         run: |
-          flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android temp
-          cp -r temp/android . && rm -rf temp lib && mkdir -p lib/services lib/features
-          echo "import 'package:shared_preferences/shared_preferences.dart'; class StorageService { static SharedPreferences? _p; static Future<void> init() async { _p = await SharedPreferences.getInstance(); } static Future<List<String>?> getStringList(String k) async => _p?.getStringList(k); }" > lib/services/storage_service.dart
-          for s in dashboard core gps baby emi gym workshop import_export settings gallery about; do case $s in import_export) C=ImportExportScreen;; emi) C=EMIScreen;; gps) C=GPSScreen;; *) C=$(echo $s | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')Screen;; esac; echo "import 'package:flutter/material.dart'; class $C extends StatelessWidget {const $C({super.key}); @override Widget build(BuildContext c){return Scaffold(appBar: AppBar(title: const Text('$C')), body: const Center(child: Text('OK')));}}" > lib/features/${s}_screen.dart; done
-          echo "import 'package:flutter/material.dart'; class VarRhoScreen extends StatelessWidget {const VarRhoScreen({super.key}); @override Widget build(BuildContext c){return const Scaffold(body: Center(child: Text('VarRho')));}}" > lib/features/varrho_screen.dart
-          echo "import 'package:flutter/material.dart'; import 'features/about_screen.dart'; import 'features/baby_screen.dart'; import 'features/core_screen.dart'; import 'features/dashboard_screen.dart'; import 'features/emi_screen.dart'; import 'features/gallery_screen.dart'; import 'features/gps_screen.dart'; import 'features/gym_screen.dart'; import 'features/import_export_screen.dart'; import 'features/settings_screen.dart'; import 'features/varrho_screen.dart'; import 'features/workshop_screen.dart'; class WanaLabApp extends StatelessWidget {const WanaLabApp({super.key}); @override Widget build(BuildContext c){return MaterialApp(title:'WanaLab', debugShowCheckedModeBanner:false, home:const MainScaffold());}} class MainScaffold extends StatefulWidget {const MainScaffold({super.key}); @override State<MainScaffold> createState()=>_S;} class _S extends State<MainScaffold>{int i=0; final p=[const DashboardScreen(), const CoreScreen(), const GPSScreen(), const BabyScreen(), const EMIScreen(), const GymScreen(), const WorkshopScreen(), const VarRhoScreen(), const ImportExportScreen(), const SettingsScreen(), const GalleryScreen(), const AboutScreen()]; @override Widget build(BuildContext c){return Scaffold(body:p[i], bottomNavigationBar:NavigationBar(selectedIndex:i<5?i:0, onDestinationSelected:(v)=>setState(()=>i=v), destinations:const [NavigationDestination(icon:Icon(Icons.dashboard),label:'Dash'), NavigationDestination(icon:Icon(Icons.verified),label:'Core'), NavigationDestination(icon:Icon(Icons.map),label:'GPS'), NavigationDestination(icon:Icon(Icons.child_care),label:'Baby'), NavigationDestination(icon:Icon(Icons.wifi),label:'EMI')]), drawer:Drawer(child:ListView(children:[ListTile(title:const Text('Dashboard'),onTap:(){setState(()=>i=0);Navigator.pop(c);}), ListTile(title:const Text('Settings'),onTap:(){setState(()=>i=9);Navigator.pop(c);})])));}}" > lib/app.dart
-          echo "import 'package:flutter/material.dart'; import 'services/storage_service.dart'; import 'app.dart'; void main() async {WidgetsFlutterBinding.ensureInitialized(); await StorageService.init(); runApp(const WanaLabApp());}" > lib/main.dart
-          echo -e "name: wana_lab_toolkit\nenvironment:\n  sdk: '>=3.2.0 <4.0.0'\ndependencies:\n  flutter:\n    sdk: flutter\n  shared_preferences: ^2.3.3\nflutter:\n  uses-material-design: true" > pubspec.yaml
+          rm -rf android lib pubspec.yaml pubspec.lock
+          flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
+          mkdir -p lib/services lib/features
+          
+          cat > lib/services/storage_service.dart << 'DART'
+          import 'package:shared_preferences/shared_preferences.dart';
+          class StorageService {
+            static SharedPreferences? _prefs;
+            static Future<void> init() async { _prefs = await SharedPreferences.getInstance(); }
+            static Future<List<String>?> getStringList(String k) async => _prefs?.getStringList(k);
+          }
+          DART
+
+          for s in dashboard core gps baby emi gym workshop varrho import_export settings gallery about; do
+            case $s in
+              import_export) C=ImportExportScreen; F=import_export_screen.dart ;;
+              varrho) C=VarRhoScreen; F=varrho_screen.dart ;;
+              emi) C=EMIScreen; F=emi_screen.dart ;;
+              gps) C=GPSScreen; F=gps_screen.dart ;;
+              *) CAP=$(echo $s | sed 's/.*/\u&/'); C=${CAP}Screen; F=${s}_screen.dart ;;
+            esac
+            cat > lib/features/$F << DART
+          import 'package:flutter/material.dart';
+          class $C extends StatelessWidget {
+            const $C({super.key});
+            @override Widget build(BuildContext context) {
+              return Scaffold(appBar: AppBar(title: const Text('$C')), body: const Center(child: Text('$C OK')));
+            }
+          }
+          DART
+          done
+
+          cat > lib/app.dart << 'DART'
+          import 'package:flutter/material.dart';
+          import 'features/about_screen.dart'; import 'features/baby_screen.dart'; import 'features/core_screen.dart'; import 'features/dashboard_screen.dart'; import 'features/emi_screen.dart'; import 'features/gallery_screen.dart'; import 'features/gps_screen.dart'; import 'features/gym_screen.dart'; import 'features/import_export_screen.dart'; import 'features/settings_screen.dart'; import 'features/varrho_screen.dart'; import 'features/workshop_screen.dart';
+          class WanaLabApp extends StatelessWidget { const WanaLabApp({super.key}); @override Widget build(BuildContext c) { return MaterialApp(title: 'WanaLab', debugShowCheckedModeBanner: false, home: const MainScaffold()); } }
+          class MainScaffold extends StatefulWidget { const MainScaffold({super.key}); @override State<MainScaffold> createState() => _S(); }
+          class _S extends State<MainScaffold> {
+            int i=0;
+            final p=[const DashboardScreen(), const CoreScreen(), const GPSScreen(), const BabyScreen(), const EMIScreen(), const GymScreen(), const WorkshopScreen(), const VarRhoScreen(), const ImportExportScreen(), const SettingsScreen(), const GalleryScreen(), const AboutScreen()];
+            @override Widget build(BuildContext c){ return Scaffold(body: p[i], bottomNavigationBar: NavigationBar(selectedIndex: i<5?i:0, onDestinationSelected: (v)=>setState(()=>i=v), destinations: const [NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dash'), NavigationDestination(icon: Icon(Icons.verified), label: 'Core'), NavigationDestination(icon: Icon(Icons.map), label: 'GPS'), NavigationDestination(icon: Icon(Icons.child_care), label: 'Baby'), NavigationDestination(icon: Icon(Icons.wifi), label: 'EMI')]), drawer: Drawer(child: ListView(children: [ListTile(title: const Text('Dashboard'), onTap: (){setState(()=>i=0); Navigator.pop(c);}), ListTile(title: const Text('Settings'), onTap: (){setState(()=>i=9); Navigator.pop(c);})]))); }
+          }
+          DART
+
+          cat > lib/main.dart << 'DART'
+          import 'package:flutter/material.dart'; import 'services/storage_service.dart'; import 'app.dart';
+          void main() async { WidgetsFlutterBinding.ensureInitialized(); await StorageService.init(); runApp(const WanaLabApp()); }
+          DART
+
+          cat > pubspec.yaml << 'YAML'
+          name: wana_lab_toolkit
+          description: WanaLab
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment: {sdk: '>=3.2.0 <4.0.0'}
+          dependencies: {flutter: {sdk: flutter}, shared_preferences: ^2.3.3}
+          dev_dependencies: {flutter_test: {sdk: flutter}, flutter_lints: ^4.0.0}
+          flutter: {uses-material-design: true}
+          YAML
+
           flutter pub get
-      - run: flutter build apk --release
+          flutter analyze
+          ls -la lib/features/
+
+      - name: Build APK
+        run: flutter build apk --release --verbose
+
       - uses: actions/upload-artifact@v4
-        with: {name: WanaLab-APK-FIXED, path: build/app/outputs/flutter-apk/app-release.apk}
+        with:
+          name: WanaLab-APK-FINAL
+          path: build/app/outputs/flutter-apk/app-release.apk
