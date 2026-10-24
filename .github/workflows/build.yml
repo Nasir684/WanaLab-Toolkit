@@ -8,7 +8,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.29.3'
@@ -33,8 +32,66 @@ jobs:
               except: pass
           PY
 
-      - name: Fix pubspec - use latest compatible
+      - name: FIX settings_screen.dart - add StorageService import
         run: |
+          python3 - << 'PY'
+          import pathlib, re, os
+          # 1. Find where StorageService class is defined
+          storage_path = None
+          for p in pathlib.Path("lib").rglob("*.dart"):
+            try:
+              txt = p.read_text(errors='ignore')
+              if "class StorageService" in txt:
+                storage_path = str(p)
+                print(f"Found StorageService in: {storage_path}")
+                break
+            except: pass
+
+          target = pathlib.Path("lib/features/settings_screen.dart")
+          content = target.read_text(errors='ignore')
+          print("--- BEFORE settings_screen.dart top 10 lines ---")
+          print("\n".join(content.splitlines()[:15]))
+
+          # 2. If not found, create a simple StorageService using SharedPreferences
+          if not storage_path:
+            print("StorageService NOT found, creating one...")
+            os.makedirs("lib/services", exist_ok=True)
+            pathlib.Path("lib/services/storage_service.dart").write_text("""
+          import 'package:shared_preferences/shared_preferences.dart';
+          class StorageService {
+            static Future<List<String>?> getStringList(String key) async {
+              final prefs = await SharedPreferences.getInstance();
+              return prefs.getStringList(key);
+            }
+            static Future<bool> setStringList(String key, List<String> value) async {
+              final prefs = await SharedPreferences.getInstance();
+              return prefs.setStringList(key, value);
+            }
+          }
+          """)
+            storage_path = "lib/services/storage_service.dart"
+
+          # 3. Convert storage_path to import
+          import_path = storage_path.replace("lib/", "package:wana_lab_toolkit/")
+          import_line = f"import '{import_path}';"
+
+          # 4. Add import if missing
+          if import_path not in content and "StorageService" not in content.splitlines()[0]:
+            # Add after other imports
+            lines = content.splitlines()
+            last_import = 0
+            for i, line in enumerate(lines):
+              if line.strip().startswith("import "):
+                last_import = i
+            lines.insert(last_import+1, import_line)
+            content = "\n".join(lines)
+            target.write_text(content)
+            print(f"Added import: {import_line}")
+          
+          print("--- AFTER top 15 lines ---")
+          print("\n".join(content.splitlines()[:15]))
+          PY
+
           cat > pubspec.yaml << 'YAML'
           name: wana_lab_toolkit
           description: WanaLab Toolkit
@@ -59,10 +116,12 @@ jobs:
           flutter:
             uses-material-design: true
           YAML
+
           rm -rf android pubspec.lock
           flutter create --project-name wana_lab_toolkit --org com.example.wanalab --platforms=android .
           flutter pub get
-          flutter pub deps | grep geolocator
+          echo "=== ANALYZE SHOULD NOW BE CLEAN ==="
+          flutter analyze --no-pub
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
