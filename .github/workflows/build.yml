@@ -4,22 +4,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Manual clone - skip long files
+      - name: Safe download - skip long files completely
         run: |
-          git clone --no-checkout --depth 1 https://github.com/Nasir684/WanaLab-Toolkit.git tmp
-          cd tmp
-          git config core.longpaths true
-          git config core.protectNTFS false
-          git sparse-checkout init --no-cone
-          git sparse-checkout set lib android pubspec.yaml
-          git checkout main
-          cd ..
-          mv tmp/lib ./lib
-          mv tmp/android ./android
-          mv tmp/pubspec.yaml ./pubspec.yaml
-          mv tmp/.git ./.git
-          rm -rf tmp
+          python3 - << 'PY'
+          import tarfile, urllib.request, os
+          url = "https://github.com/Nasir684/WanaLab-Toolkit/archive/main.tar.gz"
+          print("Downloading tarball...")
+          urllib.request.urlretrieve(url, "repo.tar.gz")
+          print("Extracting only safe folders...")
+          with tarfile.open("repo.tar.gz", "r:gz") as tar:
+              for m in tar.getmembers():
+                  # Remove top folder WanaLab-Toolkit-main/
+                  if "/" not in m.name:
+                      continue
+                  inner = m.name.split("/",1)[1]
+                  if not (inner.startswith("lib/") or inner.startswith("android/") or inner == "pubspec.yaml"):
+                      continue
+                  if len(inner) > 120:
+                      print(f"SKIPPED long file: {inner[:80]}...")
+                      continue
+                  m.name = inner
+                  if m.isdir():
+                      os.makedirs(inner, exist_ok=True)
+                  else:
+                      os.makedirs(os.path.dirname(inner), exist_ok=True)
+                      f = tar.extractfile(m)
+                      if f:
+                          open(inner, "wb").write(f.read())
+          print("Done safe extract")
+          PY
           ls -la
+          ls -la lib/
 
       - uses: actions/setup-java@v4
         with:
