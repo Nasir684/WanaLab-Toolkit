@@ -1,8 +1,8 @@
-name: build
+name: test-build
 on:
   workflow_dispatch
 jobs:
-  test-build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +16,16 @@ jobs:
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
+
+      - name: Recreate android if missing
+        run: |
+          if [ ! -d "android" ]; then
+            rm -rf ios linux macos windows web
+            flutter create . --project-name wana_lab_toolkit --platforms android
+            echo "android recreated"
+          else
+            echo "android exists"
+          fi
 
       - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons
